@@ -5,13 +5,13 @@ export async function analyzeResume(file: File, targetRole: string, userId: stri
   formData.append('file', file)
   formData.append('target_role', targetRole)
   formData.append('user_id', userId)
-
-  const res = await fetch(`${API_URL}/api/resume/analyze`, {
+  
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/resume/analyze`, {
     method: 'POST',
     body: formData
   })
-
-  if (!res.ok) throw new Error('Resume analysis failed')
+  
+  if (!res.ok) throw new Error('Analysis failed')
   return res.json()
 }
 
