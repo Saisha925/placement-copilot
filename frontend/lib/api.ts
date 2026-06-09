@@ -47,3 +47,30 @@ export async function evaluateAnswer(question: string, answer: string, targetRol
   if (!res.ok) throw new Error('Failed to evaluate answer')
   return res.json()
 }
+
+export async function runCopilot(
+  userId: string,
+  goal: string,
+  targetRole: string,
+  resumeText?: string,
+  targetCompany?: string,
+  targetDate?: string,
+  userProfile?: object
+) {
+  const res = await fetch(`${API_URL}/api/copilot/run`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      user_id: userId,
+      goal,
+      target_role: targetRole,
+      resume_text: resumeText,
+      target_company: targetCompany,
+      target_date: targetDate,
+      user_profile: userProfile,
+    }),
+  })
+
+  if (!res.ok) throw new Error('Copilot run failed')
+  return res.json()
+}

@@ -50,3 +50,71 @@ def _log_run(user_id: str, agent_name: str, duration_s: float) -> None:
         }).execute()
     except Exception as e:
         print(f"[nodes] log_run failed: {e}")  # never crash the graph on logging failure
+
+def skill_gap_node(state: dict) -> dict:
+    """
+    Skill Gap Agent node.
+    Reads resume_analysis from shared state — no manual input needed.
+    Writes categorised gaps so DSA, Interview, and Project agents can read them.
+    """
+    import json, time
+    from agents.skill_gap_agent import analyze_skill_gap
+
+    start = time.time()
+    resume_analysis = state.get("resume_analysis")
+    if not resume_analysis:
+        print("[skill_gap_node] no resume_analysis in state — skipping")
+        return {
+            "completed_agents": state.get("completed_agents", []) + ["skill_gap_agent"],
+        }
+    resume_analysis = state.get("resume_analysis", {})
+    target_role = state.get("target_role", "Software Engineer")
+    user_profile = state.get("user_profile")
+
+    # Load role requirements from JSON — no scraping, no API call
+    try:
+        with open("data/role_requirements.json") as f:
+            roles = json.load(f)
+        role_data = roles.get(target_role, roles.get("Software Engineer", {}))
+    except Exception as e:
+        print(f"[skill_gap_node] could not load role_requirements.json: {e}")
+        role_data = {}
+
+    result = analyze_skill_gap(resume_analysis, target_role, user_profile, role_data)
+
+    updated = {
+        "skill_gap": result,
+        "completed_agents": state.get("completed_agents", []) + ["skill_gap_agent"],
+    }
+
+    _log_run(state["user_id"], "skill_gap_agent", time.time() - start)
+    save_state(state["user_id"], {**state, **updated}, "skill_gap_agent")
+    return updated
+
+def career_planner_node(state: dict) -> dict:
+    """
+    Career Planner node.
+    Reads resume_analysis + skill_gap + user_profile from state.
+    Generates 30/60/90 day plan and saves back to state.
+    """
+    import time
+    from agents.career_planner_agent import generate_career_plan
+
+    start = time.time()
+    if not state.get("resume_analysis"):
+        print("[career_planner_node] no resume_analysis in state — skipping")
+        return {
+            "completed_agents": state.get("completed_agents", []) + ["career_planner"],
+        }
+    result = generate_career_plan(state)
+
+    updated = {
+        "career_plan": result,
+        "plan_revision_needed": False,   # reset after replanning
+        "feedback_triggers": [],          # clear triggers after processing
+        "completed_agents": state.get("completed_agents", []) + ["career_planner"],
+    }
+
+    _log_run(state["user_id"], "career_planner", time.time() - start)
+    save_state(state["user_id"], {**state, **updated}, "career_planner")
+    return updated

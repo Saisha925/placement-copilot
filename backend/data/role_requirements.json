@@ -1,0 +1,62 @@
+{
+  "Backend Engineer": {
+    "required_skills": [
+      "Python", "REST APIs", "SQL", "Git", "Data Structures",
+      "Algorithms", "System Design", "Docker", "Linux", "OOPs"
+    ],
+    "preferred_skills": [
+      "FastAPI", "Django", "PostgreSQL", "Redis", "AWS",
+      "Kubernetes", "Kafka", "MongoDB", "gRPC", "CI/CD"
+    ]
+  },
+  "Software Engineer": {
+    "required_skills": [
+      "Data Structures", "Algorithms", "OOPs", "SQL", "Git",
+      "System Design", "Python", "REST APIs", "Linux", "Problem Solving"
+    ],
+    "preferred_skills": [
+      "Java", "C++", "Docker", "AWS", "React",
+      "Microservices", "Redis", "MongoDB", "Testing", "CI/CD"
+    ]
+  },
+  "Data Analyst": {
+    "required_skills": [
+      "Python", "SQL", "Excel", "Data Visualization", "Statistics",
+      "Pandas", "NumPy", "Problem Solving", "Communication", "Git"
+    ],
+    "preferred_skills": [
+      "Power BI", "Tableau", "Machine Learning", "Spark",
+      "Airflow", "BigQuery", "R", "A/B Testing", "dbt", "Looker"
+    ]
+  },
+  "ML Engineer": {
+    "required_skills": [
+      "Python", "Machine Learning", "Deep Learning", "SQL", "Git",
+      "Data Structures", "Algorithms", "Statistics", "NumPy", "Pandas"
+    ],
+    "preferred_skills": [
+      "PyTorch", "TensorFlow", "MLflow", "Docker", "AWS",
+      "Spark", "Kubernetes", "FastAPI", "CUDA", "Transformers"
+    ]
+  },
+  "AI Engineer": {
+    "required_skills": [
+      "Python", "LLMs", "Prompt Engineering", "REST APIs", "Git",
+      "Machine Learning", "Data Structures", "SQL", "OOPs", "Statistics"
+    ],
+    "preferred_skills": [
+      "LangChain", "LangGraph", "RAG", "Vector Databases", "FastAPI",
+      "Docker", "AWS", "Fine-tuning", "Agents", "Embeddings"
+    ]
+  },
+  "Frontend Engineer": {
+    "required_skills": [
+      "JavaScript", "React", "HTML", "CSS", "Git",
+      "REST APIs", "TypeScript", "Problem Solving", "OOPs", "Responsive Design"
+    ],
+    "preferred_skills": [
+      "Next.js", "Redux", "Tailwind CSS", "Testing", "GraphQL",
+      "Performance Optimization", "Webpack", "Accessibility", "Figma", "CI/CD"
+    ]
+  }
+}

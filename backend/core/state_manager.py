@@ -38,7 +38,10 @@ def save_state(user_id: str, state: dict, last_agent: str = "") -> None:
             "state": serialisable,
             "last_agent": last_agent,
             "iteration_count": state.get("iteration_count", 0),
-        }).execute()
+        },
+        on_conflict="user_id"
+        ).execute()
+        
     except Exception as e:
         print(f"[state_manager] save failed for {user_id}: {e}")
 
