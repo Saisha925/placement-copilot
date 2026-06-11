@@ -6,13 +6,14 @@ from graph.nodes import (
     aggregate_node,
     skill_gap_node,
     career_planner_node,
+    dsa_node,
 )
 
 AGENT_NODES: dict = {
     "resume_agent": resume_node,
     "skill_gap_agent": skill_gap_node,
     "career_planner": career_planner_node,
-    # "dsa_agent": dsa_node,                         ← Sprint 4
+    "dsa_agent": dsa_node,                      
     # "project_recommender": project_recommender_node, ← Sprint 5
     # "interview_agent": interview_node,               ← Sprint 6
 }

@@ -27,11 +27,11 @@ def _rule_based_route(state: dict) -> list | None:
     if state.get("skill_gap") and "career_planner" not in completed:
         return ["career_planner"]
 
-    if state.get("skill_gap") and "project_recommender" not in completed:
-        return ["project_recommender"]
-
     if state.get("skill_gap") and "dsa_agent" not in completed:
         return ["dsa_agent"]
+
+    if state.get("skill_gap") and "project_recommender" not in completed:
+        return ["project_recommender"]
 
     # All primary agents done — fall through to LLM for edge cases
     return None

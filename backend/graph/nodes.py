@@ -118,3 +118,50 @@ def career_planner_node(state: dict) -> dict:
     _log_run(state["user_id"], "career_planner", time.time() - start)
     save_state(state["user_id"], {**state, **updated}, "career_planner")
     return updated
+
+def dsa_node(state: dict) -> dict:
+    import time
+    from agents.dsa_agent import get_progress, get_problems, generate_daily_plan, _recompute_progress
+
+    start = time.time()
+    user_id = state["user_id"]
+
+    skill_gap = state.get("skill_gap") or {}
+    skill_gap_priorities = skill_gap.get("dsa_priority_topics", [])
+
+    career_plan_week = {}
+    if cp := state.get("career_plan"):
+        weeks = cp.get("plan_30_day", [])
+        if weeks:
+            career_plan_week = weeks[0]
+
+    # Get existing progress first
+    progress = get_progress(user_id)
+    weak_topics = progress.get("weak_topics", [])
+
+    # Get already-solved problem names for exclusion
+    all_problems = get_problems(user_id)
+    solved_names = list({p["problem_name"] for p in all_problems})
+
+    # Generate daily plan with urgency and exclusions
+    daily_plan = generate_daily_plan(
+        weak_topics,
+        skill_gap_priorities,
+        career_plan_week,
+        state.get("user_profile"),
+        target_date=state.get("target_date"),
+        solved_problems=solved_names,
+    )
+
+    # Save daily_plan into dsa_progress table so the DSA page can read it
+    full_progress = _recompute_progress(user_id, daily_plan=daily_plan)
+    full_progress["daily_plan"] = daily_plan
+
+    updated = {
+        "dsa_progress": full_progress,
+        "completed_agents": state.get("completed_agents", []) + ["dsa_agent"],
+    }
+
+    _log_run(user_id, "dsa_agent", time.time() - start)
+    save_state(user_id, {**state, **updated}, "dsa_agent")
+    return updated

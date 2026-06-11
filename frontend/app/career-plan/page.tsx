@@ -8,13 +8,23 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Calendar, Target, AlertTriangle, CheckCircle,
-  Clock, ChevronRight, Sparkles, ArrowLeft
+  Clock, ChevronRight, Sparkles, ArrowLeft,
+  ExternalLink, Code2, Mic, ArrowRight
 } from 'lucide-react'
+
+interface Resource {
+  title: string
+  type: string   // video | practice | article | course | docs
+  url: string
+  platform: string
+}
 
 interface DayTask {
   task: string
   category: string
   priority: string
+  topics?: string[]
+  resources?: Resource[]
 }
 
 interface WeekPlan {
@@ -68,6 +78,33 @@ const PRIORITY_COLORS: Record<string, string> = {
   low: 'text-green-400',
 }
 
+const PLATFORM_STYLES: Record<string, { color: string; emoji: string }> = {
+  YouTube:        { color: 'text-red-400 hover:text-red-300 border-red-500/20 bg-red-500/5', emoji: '🎬' },
+  LeetCode:       { color: 'text-yellow-400 hover:text-yellow-300 border-yellow-500/20 bg-yellow-500/5', emoji: '💻' },
+  GeeksforGeeks:  { color: 'text-green-400 hover:text-green-300 border-green-500/20 bg-green-500/5', emoji: '📄' },
+  HackerRank:     { color: 'text-emerald-400 hover:text-emerald-300 border-emerald-500/20 bg-emerald-500/5', emoji: '💻' },
+  Codeforces:     { color: 'text-blue-400 hover:text-blue-300 border-blue-500/20 bg-blue-500/5', emoji: '🏆' },
+  InterviewBit:   { color: 'text-cyan-400 hover:text-cyan-300 border-cyan-500/20 bg-cyan-500/5', emoji: '🎯' },
+}
+
+const DEFAULT_PLATFORM_STYLE = { color: 'text-blue-400 hover:text-blue-300 border-blue-500/20 bg-blue-500/5', emoji: '📘' }
+
+function ResourceLink({ resource }: { resource: Resource }) {
+  const style = PLATFORM_STYLES[resource.platform] || DEFAULT_PLATFORM_STYLE
+  return (
+    <a
+      href={resource.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-colors ${style.color}`}
+    >
+      <span>{style.emoji}</span>
+      <span className="max-w-[160px] truncate">{resource.title}</span>
+      <ExternalLink className="h-2.5 w-2.5 flex-shrink-0 opacity-50" />
+    </a>
+  )
+}
+
 function WeekCard({ week }: { week: WeekPlan }) {
   const [expanded, setExpanded] = useState(false)
 
@@ -96,16 +133,42 @@ function WeekCard({ week }: { week: WeekPlan }) {
       {expanded && (
         <CardContent className="pt-0 space-y-4">
           {/* Tasks */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             {week.daily_tasks.map((task, i) => (
-              <div key={i} className="flex items-start gap-2 text-sm">
-                <span className={`text-xs mt-0.5 font-medium ${PRIORITY_COLORS[task.priority] || 'text-muted-foreground'}`}>
-                  ●
-                </span>
-                <span className="flex-1 text-muted-foreground">{task.task}</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full border ${CATEGORY_COLORS[task.category] || 'bg-muted text-muted-foreground border-border'}`}>
-                  {task.category}
-                </span>
+              <div key={i} className="space-y-2 p-3 rounded-lg bg-accent/30 border border-border/50">
+                {/* Task header */}
+                <div className="flex items-start gap-2 text-sm">
+                  <span className={`text-xs mt-0.5 font-medium ${PRIORITY_COLORS[task.priority] || 'text-muted-foreground'}`}>
+                    ●
+                  </span>
+                  <span className="flex-1 text-muted-foreground">{task.task}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full border flex-shrink-0 ${CATEGORY_COLORS[task.category] || 'bg-muted text-muted-foreground border-border'}`}>
+                    {task.category}
+                  </span>
+                </div>
+
+                {/* Topics */}
+                {task.topics && task.topics.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 ml-4">
+                    {task.topics.map((topic, j) => (
+                      <span
+                        key={j}
+                        className="text-[11px] px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20"
+                      >
+                        {topic}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Resources */}
+                {task.resources && task.resources.length > 0 && (
+                  <div className="flex flex-wrap gap-2 ml-4">
+                    {task.resources.map((resource, k) => (
+                      <ResourceLink key={k} resource={resource} />
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -308,6 +371,88 @@ export default function CareerPlanPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* ─── What's Next? CTA Section ─────────────────────────── */}
+      <div className="mt-8 mb-4">
+        <h2 className="text-lg font-semibold mb-1 flex items-center gap-2">
+          <ArrowRight className="h-5 w-5 text-primary" />
+          What&apos;s Next?
+        </h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Your plan is ready — now take action.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* DSA Mentor */}
+          <Card
+            className="group cursor-pointer border-blue-500/20 hover:border-blue-500/40 hover:bg-blue-500/5 transition-all duration-200"
+            onClick={() => router.push('/dsa')}
+          >
+            <CardContent className="pt-5 pb-5">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-blue-500/10">
+                  <Code2 className="h-5 w-5 text-blue-400" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm group-hover:text-blue-400 transition-colors">
+                    DSA Mentor
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Start practicing your priority DSA topics with a personalised daily plan
+                  </p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all mt-1" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Mock Interview */}
+          <Card
+            className="group cursor-pointer border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all duration-200"
+            onClick={() => router.push('/interview')}
+          >
+            <CardContent className="pt-5 pb-5">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-orange-500/10">
+                  <Mic className="h-5 w-5 text-orange-400" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm group-hover:text-orange-400 transition-colors">
+                    Mock Interview
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Test yourself with AI-powered mock interviews tailored to your role
+                  </p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-orange-400 group-hover:translate-x-0.5 transition-all mt-1" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Back to Copilot */}
+          <Card
+            className="group cursor-pointer border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-all duration-200"
+            onClick={() => router.push('/copilot')}
+          >
+            <CardContent className="pt-5 pb-5">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm group-hover:text-primary transition-colors">
+                    Re-run Copilot
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Change your goal or target role and generate a new plan
+                  </p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all mt-1" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
     </div>
   )

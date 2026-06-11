@@ -64,7 +64,18 @@ Skill Gaps to address:
 {adaptations}
 
 Create a realistic 30/60/90 day placement preparation plan calibrated to {daily_hours} hours/day.
-Be specific — name actual topics, not vague advice.
+
+IMPORTANT RULES:
+1. Be SPECIFIC — name actual topics, sub-topics, and techniques. Not vague advice.
+2. For EVERY task, include a "topics" array listing the specific sub-topics to cover.
+3. For EVERY task, include a "resources" array with 1-2 learning/practice resources.
+4. Resources MUST include real, useful links:
+   - For videos: use YouTube search URLs like "https://www.youtube.com/results?search_query=topic+one+shot"
+   - For DSA practice: use LeetCode topic URLs like "https://leetcode.com/tag/arrays/" or "https://leetcode.com/problemset/?topicSlugs=array"
+   - For concepts: use GeeksforGeeks like "https://www.geeksforgeeks.org/topic-name/"
+   - For other practice: use HackerRank, Codeforces, or InterviewBit links
+   - For projects: use official docs like "https://fastapi.tiangolo.com/" or "https://docs.docker.com/"
+5. Cover ALL skill areas: DSA, OOPs, OS, DBMS, CN, System Design, languages, frameworks — not just DSA.
 
 Return ONLY valid JSON, no explanation:
 {{
@@ -72,12 +83,30 @@ Return ONLY valid JSON, no explanation:
   "plan_30_day": [
     {{
       "week": 1,
-      "focus_area": "Specific topic name",
+      "focus_area": "Arrays & Strings Fundamentals",
       "daily_tasks": [
-        {{"task": "Solve 3 easy array problems on LeetCode", "category": "dsa", "priority": "high"}},
-        {{"task": "Read OS process scheduling notes", "category": "fundamentals", "priority": "medium"}}
+        {{
+          "task": "Master array techniques: Two Pointers, Sliding Window, Prefix Sum",
+          "category": "dsa",
+          "priority": "high",
+          "topics": ["Two Pointers", "Sliding Window", "Prefix Sum", "Kadane's Algorithm"],
+          "resources": [
+            {{"title": "Arrays Complete Playlist", "type": "video", "url": "https://www.youtube.com/results?search_query=arrays+dsa+complete+course", "platform": "YouTube"}},
+            {{"title": "Practice Array Problems", "type": "practice", "url": "https://leetcode.com/tag/array/", "platform": "LeetCode"}}
+          ]
+        }},
+        {{
+          "task": "Learn OOPs: Inheritance, Polymorphism, Abstraction, Encapsulation",
+          "category": "fundamentals",
+          "priority": "medium",
+          "topics": ["Inheritance", "Polymorphism", "Abstraction", "Encapsulation"],
+          "resources": [
+            {{"title": "OOPs Concepts One Shot", "type": "video", "url": "https://www.youtube.com/results?search_query=oops+concepts+one+shot+java", "platform": "YouTube"}},
+            {{"title": "OOPs Practice Problems", "type": "practice", "url": "https://www.geeksforgeeks.org/object-oriented-programming-oops-concept-in-java/", "platform": "GeeksforGeeks"}}
+          ]
+        }}
       ],
-      "milestone": "What student completes by end of this week",
+      "milestone": "Complete 20 easy array problems + finish OOPs basics",
       "estimated_daily_hours": {daily_hours}
     }}
   ],
@@ -86,7 +115,15 @@ Return ONLY valid JSON, no explanation:
       "week": 5,
       "focus_area": "Specific topic name",
       "daily_tasks": [
-        {{"task": "...", "category": "...", "priority": "..."}}
+        {{
+          "task": "Detailed task description",
+          "category": "dsa|fundamentals|projects|interview|resume",
+          "priority": "high|medium|low",
+          "topics": ["Sub-topic 1", "Sub-topic 2"],
+          "resources": [
+            {{"title": "Resource name", "type": "video|practice|article|course|docs", "url": "https://...", "platform": "Platform name"}}
+          ]
+        }}
       ],
       "milestone": "...",
       "estimated_daily_hours": {daily_hours}
@@ -97,7 +134,13 @@ Return ONLY valid JSON, no explanation:
       "week": 9,
       "focus_area": "Specific topic name",
       "daily_tasks": [
-        {{"task": "...", "category": "...", "priority": "..."}}
+        {{
+          "task": "...",
+          "category": "...",
+          "priority": "...",
+          "topics": ["..."],
+          "resources": [{{"title": "...", "type": "...", "url": "...", "platform": "..."}}]
+        }}
       ],
       "milestone": "...",
       "estimated_daily_hours": {daily_hours}
