@@ -7,10 +7,13 @@ import {
   FileText,
   BrainCircuit,
   Code2,
+  FolderGit2,
   MessageSquare,
   LogOut,
   Sparkles,
   Map,
+  GraduationCap,
+  Server
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
@@ -21,7 +24,10 @@ const navItems = [
   { href: '/career-plan', label: 'Career Plan', icon: Map },        // ← NEW
   { href: '/resume', label: 'Resume Analyzer', icon: FileText },
   { href: '/skill-gap', label: 'Skill Gap', icon: BrainCircuit },
+  { href: '/core-concepts', label: 'Core CS Concepts', icon: GraduationCap },
   { href: '/dsa', label: 'DSA Mentor', icon: Code2 },
+  { href: '/system-design', label: 'System Design', icon: Server },
+  { href: '/projects', label: 'Projects', icon: FolderGit2 },
   { href: '/interview', label: 'Mock Interview', icon: MessageSquare },
 ]
 

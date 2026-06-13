@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
 
 export async function analyzeResume(file: File, targetRole: string, userId: string) {
   const formData = new FormData()
@@ -26,14 +26,39 @@ export async function getSkillGap(resumeText: string, targetRole: string, userId
   return res.json()
 }
 
-export async function generateInterviewQuestions(resumeText: string, targetRole: string, roundType: string) {
+export async function generateInterviewQuestions(
+  userId: string,
+  resumeText: string, 
+  targetRole: string, 
+  roundType: string,
+  experienceLevel: string = "Student / Fresher"
+) {
   const res = await fetch(`${API_URL}/api/interview/questions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ resume_text: resumeText, target_role: targetRole, round_type: roundType })
+    body: JSON.stringify({ 
+      user_id: userId,
+      resume_text: resumeText, 
+      target_role: targetRole, 
+      round_type: roundType,
+      experience_level: experienceLevel
+    })
   })
 
   if (!res.ok) throw new Error('Failed to generate questions')
+  return res.json()
+}
+
+export async function transcribeAudio(audioBlob: Blob) {
+  const formData = new FormData()
+  formData.append('file', audioBlob, 'audio.webm')
+
+  const res = await fetch(`${API_URL}/api/interview/transcribe`, {
+    method: 'POST',
+    body: formData
+  })
+
+  if (!res.ok) throw new Error('Failed to transcribe audio')
   return res.json()
 }
 
@@ -45,6 +70,109 @@ export async function evaluateAnswer(question: string, answer: string, targetRol
   })
 
   if (!res.ok) throw new Error('Failed to evaluate answer')
+  return res.json()
+}
+
+export async function analyzeCommunication(transcript: string) {
+  const res = await fetch(`${API_URL}/api/interview/analyze-communication`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ transcript })
+  })
+
+  if (!res.ok) throw new Error('Failed to analyze communication')
+  return res.json()
+}
+
+export async function getInterviewHistory(userId: string) {
+  const res = await fetch(`${API_URL}/api/interview/history/${userId}`)
+  if (!res.ok) throw new Error('Failed to fetch interview history')
+  const data = await res.json()
+  return data.history || []
+}
+
+// ── CS Fundamentals API ──────────────────────────────────────────────────
+
+export async function generateCSGuide(targetRole: string) {
+  const res = await fetch(`${API_URL}/api/cs_fundamentals/guide`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ target_role: targetRole })
+  })
+  if (!res.ok) throw new Error('Failed to generate CS guide')
+  const data = await res.json()
+  return data.guide
+}
+
+export async function generateCSQuestions(subject: string, topic: string) {
+  const res = await fetch(`${API_URL}/api/cs_fundamentals/questions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ subject, topic })
+  })
+  if (!res.ok) throw new Error('Failed to generate CS questions')
+  const data = await res.json()
+  return data.questions
+}
+
+export async function evaluateCSAnswer(question: string, answer: string) {
+  const res = await fetch(`${API_URL}/api/cs_fundamentals/evaluate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question, answer })
+  })
+  if (!res.ok) throw new Error('Failed to evaluate CS answer')
+  const data = await res.json()
+  return data.evaluation
+}
+
+export async function saveCSHistory(userId: string, subject: string, topic: string, question: string, answer: string, score: number, feedback: string, missingPoints: string[]) {
+  const res = await fetch(`${API_URL}/api/cs_fundamentals/history`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      user_id: userId,
+      subject,
+      topic,
+      question,
+      answer,
+      score,
+      feedback,
+      missing_points: missingPoints
+    })
+  })
+  if (!res.ok) throw new Error('Failed to save CS history')
+  return res.json()
+}
+
+export async function getCSHistory(userId: string) {
+  const res = await fetch(`${API_URL}/api/cs_fundamentals/history/${userId}`)
+  if (!res.ok) throw new Error('Failed to fetch CS history')
+  const data = await res.json()
+  return data.history || []
+}
+
+export async function saveInterviewResult(
+  userId: string,
+  targetRole: string,
+  roundType: string,
+  qaData: any[],
+  overallScore: number,
+  feedback: string
+) {
+  const res = await fetch(`${API_URL}/api/interview/history`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      user_id: userId,
+      target_role: targetRole,
+      round_type: roundType,
+      questions_and_answers: qaData,
+      overall_score: overallScore,
+      feedback: feedback
+    })
+  })
+  if (!res.ok) throw new Error('Failed to save interview result')
   return res.json()
 }
 
@@ -153,4 +281,57 @@ export async function refreshDSAPlan(userId: string) {
   })
   if (!res.ok) throw new Error('Failed to refresh plan')
   return res.json()
+}
+
+// ── Projects API ─────────────────────────────────────────────────────────────
+
+export async function getProjects(userId: string) {
+  const res = await fetch(`${API_URL}/api/projects/user/${userId}`)
+  if (!res.ok) throw new Error('Failed to fetch projects')
+  const data = await res.json()
+  return data.projects || []
+}
+
+export async function updateProjectStatus(projectId: string, userId: string, status: string) {
+  const res = await fetch(`${API_URL}/api/projects/${projectId}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId, status }),
+  })
+  if (!res.ok) throw new Error('Failed to update project status')
+  return res.json()
+}
+
+export async function refreshProjects(userId: string) {
+  const res = await fetch(`${API_URL}/api/projects/refresh`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId }),
+  })
+  if (!res.ok) throw new Error('Failed to refresh projects')
+  return res.json()
+}
+
+// ── System Design API ────────────────────────────────────────────────────────
+
+export async function generateSystemDesignChallenge(targetRole: string) {
+  const res = await fetch(`${API_URL}/api/system_design/challenge`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ target_role: targetRole })
+  })
+  if (!res.ok) throw new Error('Failed to generate challenge')
+  const data = await res.json()
+  return data.challenge
+}
+
+export async function evaluateSystemDesign(challenge: any, userSolution: string) {
+  const res = await fetch(`${API_URL}/api/system_design/evaluate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ challenge, user_solution: userSolution })
+  })
+  if (!res.ok) throw new Error('Failed to evaluate design')
+  const data = await res.json()
+  return data.evaluation
 }

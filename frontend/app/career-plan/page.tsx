@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Calendar, Target, AlertTriangle, CheckCircle,
   Clock, ChevronRight, Sparkles, ArrowLeft,
-  ExternalLink, Code2, Mic, ArrowRight
+  ExternalLink, Code2, Mic, ArrowRight, FolderGit2
 } from 'lucide-react'
 
 interface Resource {
@@ -382,7 +382,7 @@ export default function CareerPlanPage() {
           Your plan is ready — now take action.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* DSA Mentor */}
           <Card
             className="group cursor-pointer border-blue-500/20 hover:border-blue-500/40 hover:bg-blue-500/5 transition-all duration-200"
@@ -402,6 +402,29 @@ export default function CareerPlanPage() {
                   </p>
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all mt-1" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Build Projects */}
+          <Card
+            className="group cursor-pointer border-green-500/20 hover:border-green-500/40 hover:bg-green-500/5 transition-all duration-200"
+            onClick={() => router.push('/projects')}
+          >
+            <CardContent className="pt-5 pb-5">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-green-500/10">
+                  <FolderGit2 className="h-5 w-5 text-green-400" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm group-hover:text-green-400 transition-colors">
+                    Build Projects
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Recommended portfolio projects tailored to your skill gaps
+                  </p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-green-400 group-hover:translate-x-0.5 transition-all mt-1" />
               </div>
             </CardContent>
           </Card>

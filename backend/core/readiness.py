@@ -4,10 +4,11 @@ def calculate_readiness(state: dict) -> int:
     Pure math — never calls an LLM.
 
     Weights:
-        Resume           20%
-        DSA              25%
+        Resume           15%
+        DSA              20%
         CS Fundamentals  15%
-        Mock Interview   20%
+        System Design    15%
+        Mock Interview   15%
         Communication    10%
         Projects         10%
     """
@@ -44,11 +45,16 @@ def calculate_readiness(state: dict) -> int:
         done = sum(1 for p in projects if p.get("status") == "completed")
         project_score = (done / total * 100) if total > 0 else 0
 
+    sd_score = 0
+    if sd := state.get("system_design_scores"):
+        sd_score = rolling_avg(sd.get("history", []), "score", 5)
+
     raw = (
-        resume_score    * 0.20 +
-        dsa_score       * 0.25 +
+        resume_score    * 0.15 +
+        dsa_score       * 0.20 +
         cs_score        * 0.15 +
-        interview_score * 0.20 +
+        sd_score        * 0.15 +
+        interview_score * 0.15 +
         comm_score      * 0.10 +
         project_score   * 0.10
     )

@@ -165,3 +165,118 @@ def dsa_node(state: dict) -> dict:
     _log_run(user_id, "dsa_agent", time.time() - start)
     save_state(user_id, {**state, **updated}, "dsa_agent")
     return updated
+
+
+def project_recommender_node(state: dict) -> dict:
+    """
+    Project Recommender node.
+    Reads skill_gap from state, generates 3 tailored portfolio projects,
+    and saves them to the project_recommendations table.
+    """
+    import time
+    import uuid
+    from agents.project_recommender import recommend_projects
+
+    start = time.time()
+    user_id = state["user_id"]
+
+    if not state.get("skill_gap"):
+        print("[project_recommender_node] no skill_gap in state — skipping")
+        return {
+            "completed_agents": state.get("completed_agents", []) + ["project_recommender"],
+        }
+
+    projects = recommend_projects(state)
+
+    # Save each project to Supabase
+    client = get_supabase_client()
+    saved_projects = []
+
+    # Clear old recommendations first
+    try:
+        client.table("project_recommendations").delete().eq(
+            "user_id", user_id
+        ).execute()
+    except Exception as e:
+        print(f"[project_recommender_node] delete old projects failed: {e}")
+
+    for project in projects:
+        try:
+            row = {
+                "user_id": user_id,
+                "title": project["title"],
+                "description": project["description"],
+                "tech_stack": project.get("tech_stack", []),
+                "step_by_step": project.get("step_by_step", []),
+                "skills_addressed": project.get("skills_addressed", []),
+                "difficulty": project.get("difficulty", "intermediate"),
+                "estimated_hours": project.get("estimated_hours", 20),
+                "why_this_project": project.get("why_this_project", ""),
+                "status": "suggested",
+            }
+            result = client.table("project_recommendations").insert(row).execute()
+            if result.data:
+                saved_projects.append(result.data[0])
+            else:
+                saved_projects.append({"id": str(uuid.uuid4()), **row, "status": "suggested"})
+        except Exception as e:
+            print(f"[project_recommender_node] insert failed: {e}")
+            saved_projects.append({"id": str(uuid.uuid4()), **project, "status": "suggested"})
+
+    updated = {
+        "project_recommendations": saved_projects,
+        "completed_agents": state.get("completed_agents", []) + ["project_recommender"],
+    }
+
+    _log_run(user_id, "project_recommender", time.time() - start)
+    save_state(user_id, {**state, **updated}, "project_recommender")
+    return updated
+
+
+def interview_node(state: dict) -> dict:
+    """
+    Interview Agent node.
+    Reads skill_gap from state, generates a tailored interview prep kit,
+    and updates interview_scores in state.
+    """
+    import time
+    from agents.interview_agent import generate_prep_kit
+
+    start = time.time()
+    user_id = state["user_id"]
+
+    if not state.get("skill_gap"):
+        print("[interview_node] no skill_gap in state — skipping")
+        return {
+            "completed_agents": state.get("completed_agents", []) + ["interview_agent"],
+        }
+
+    prep_kit = generate_prep_kit(state)
+
+    # We store the prep kit inside interview_scores as 'prep_kit'
+    # so the frontend can access it later.
+    current_scores = state.get("interview_scores") or {}
+    
+    updated = {
+        "interview_scores": {
+            **current_scores,
+            "prep_kit": prep_kit
+        },
+        "completed_agents": state.get("completed_agents", []) + ["interview_agent"],
+    }
+
+    _log_run(user_id, "interview_agent", time.time() - start)
+    save_state(user_id, {**state, **updated}, "interview_agent")
+    return updated
+
+def cs_fundamentals_node(state: dict) -> dict:
+    """CS Fundamentals prep node."""
+    return {
+        "completed_agents": state.get("completed_agents", []) + ["cs_fundamentals_agent"]
+    }
+
+def system_design_node(state: dict) -> dict:
+    """System Design prep node."""
+    return {
+        "completed_agents": state.get("completed_agents", []) + ["system_design_agent"]
+    }

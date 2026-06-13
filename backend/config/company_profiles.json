@@ -1,0 +1,6 @@
+{
+  "Amazon": "Heavy focus on Amazon Leadership Principles (Customer Obsession, Ownership, Bias for Action). Expect behavioral questions to dominate, even in technical rounds. Always look for STAR method responses.",
+  "Google": "Heavy focus on algorithmic efficiency, Big-O complexity, and edge cases. Expect highly theoretical and open-ended problems.",
+  "Microsoft": "Focus on system design, object-oriented programming (OOP), debugging, and practical engineering over pure algorithm puzzles.",
+  "Meta": "Focus on high-speed execution, bug-free code on the first run, and scale. Expect questions related to social graphs or high-traffic UI components."
+}

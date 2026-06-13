@@ -10,5 +10,7 @@ def get_llm(temperature: float = 0.3, model: str = "llama-3.1-8b-instant") -> Ch
     return ChatGroq(
         model=model,
         temperature=temperature,
-        groq_api_key=GROQ_API_KEY
+        groq_api_key=GROQ_API_KEY,
+        timeout=15,
+        max_retries=1
     )

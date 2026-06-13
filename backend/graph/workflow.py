@@ -7,15 +7,21 @@ from graph.nodes import (
     skill_gap_node,
     career_planner_node,
     dsa_node,
+    project_recommender_node,
+    interview_node,
+    cs_fundamentals_node,
+    system_design_node,
 )
 
 AGENT_NODES: dict = {
     "resume_agent": resume_node,
     "skill_gap_agent": skill_gap_node,
     "career_planner": career_planner_node,
-    "dsa_agent": dsa_node,                      
-    # "project_recommender": project_recommender_node, ← Sprint 5
-    # "interview_agent": interview_node,               ← Sprint 6
+    "dsa_agent": dsa_node,
+    "project_recommender": project_recommender_node,
+    "interview_agent": interview_node,
+    "cs_fundamentals_agent": cs_fundamentals_node,
+    "system_design_agent": system_design_node,
 }
 
 
