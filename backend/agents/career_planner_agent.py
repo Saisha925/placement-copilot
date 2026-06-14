@@ -69,12 +69,12 @@ IMPORTANT RULES:
 1. Be SPECIFIC — name actual topics, sub-topics, and techniques. Not vague advice.
 2. For EVERY task, include a "topics" array listing the specific sub-topics to cover.
 3. For EVERY task, include a "resources" array with 1-2 learning/practice resources.
-4. Resources MUST include real, useful links:
+4. Resources MUST include real, useful links. To avoid 404 errors, ALWAYS use search URLs instead of hallucinating direct article links:
    - For videos: use YouTube search URLs like "https://www.youtube.com/results?search_query=topic+one+shot"
-   - For DSA practice: use LeetCode topic URLs like "https://leetcode.com/tag/arrays/" or "https://leetcode.com/problemset/?topicSlugs=array"
-   - For concepts: use GeeksforGeeks like "https://www.geeksforgeeks.org/topic-name/"
-   - For other practice: use HackerRank, Codeforces, or InterviewBit links
-   - For projects: use official docs like "https://fastapi.tiangolo.com/" or "https://docs.docker.com/"
+   - For DSA practice: use LeetCode tag URLs like "https://leetcode.com/tag/array/"
+   - For concepts: use Google search URLs for GeeksforGeeks like "https://www.google.com/search?q=site:geeksforgeeks.org+topic+name"
+   - For other practice: use Google search URLs like "https://www.google.com/search?q=site:hackerrank.com+topic+name"
+   - For projects: use Google search URLs like "https://www.google.com/search?q=official+documentation+topic"
 5. Cover ALL skill areas: DSA, OOPs, OS, DBMS, CN, System Design, languages, frameworks — not just DSA.
 
 Return ONLY valid JSON, no explanation:

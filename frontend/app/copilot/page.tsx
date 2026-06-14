@@ -62,6 +62,9 @@ export default function CopilotPage() {
         'Supervisor Agent analysing your goal...',
         'Resume Agent evaluating your profile...',
         'Skill Gap Agent identifying missing skills...',
+        'DSA Agent assessing algorithms...',
+        'Interview Agent preparing mock questions...',
+        'Project Recommender selecting projects...',
         'Career Planner generating your 30/60/90 day plan...',
         'Finalising recommendations...',
       ]

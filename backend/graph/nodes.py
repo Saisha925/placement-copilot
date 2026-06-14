@@ -16,7 +16,7 @@ def resume_node(state: dict) -> dict:
 
     if not resume_text:
         return {
-            "completed_agents": state.get("completed_agents", []) + ["resume_agent"],
+            "completed_agents": ["resume_agent"],
             "messages": [{"role": "assistant",
                           "content": "No resume text found. Please upload your resume first."}],
         }
@@ -25,7 +25,7 @@ def resume_node(state: dict) -> dict:
 
     updated = {
         "resume_analysis": result,
-        "completed_agents": state.get("completed_agents", []) + ["resume_agent"],
+        "completed_agents": ["resume_agent"],
     }
 
     _log_run(state["user_id"], "resume_agent", time.time() - start)
@@ -65,7 +65,7 @@ def skill_gap_node(state: dict) -> dict:
     if not resume_analysis:
         print("[skill_gap_node] no resume_analysis in state — skipping")
         return {
-            "completed_agents": state.get("completed_agents", []) + ["skill_gap_agent"],
+            "completed_agents": ["skill_gap_agent"],
         }
     resume_analysis = state.get("resume_analysis", {})
     target_role = state.get("target_role", "Software Engineer")
@@ -84,7 +84,7 @@ def skill_gap_node(state: dict) -> dict:
 
     updated = {
         "skill_gap": result,
-        "completed_agents": state.get("completed_agents", []) + ["skill_gap_agent"],
+        "completed_agents": ["skill_gap_agent"],
     }
 
     _log_run(state["user_id"], "skill_gap_agent", time.time() - start)
@@ -104,7 +104,7 @@ def career_planner_node(state: dict) -> dict:
     if not state.get("resume_analysis"):
         print("[career_planner_node] no resume_analysis in state — skipping")
         return {
-            "completed_agents": state.get("completed_agents", []) + ["career_planner"],
+            "completed_agents": ["career_planner"],
         }
     result = generate_career_plan(state)
 
@@ -112,7 +112,7 @@ def career_planner_node(state: dict) -> dict:
         "career_plan": result,
         "plan_revision_needed": False,   # reset after replanning
         "feedback_triggers": [],          # clear triggers after processing
-        "completed_agents": state.get("completed_agents", []) + ["career_planner"],
+        "completed_agents": ["career_planner"],
     }
 
     _log_run(state["user_id"], "career_planner", time.time() - start)
@@ -159,7 +159,7 @@ def dsa_node(state: dict) -> dict:
 
     updated = {
         "dsa_progress": full_progress,
-        "completed_agents": state.get("completed_agents", []) + ["dsa_agent"],
+        "completed_agents": ["dsa_agent"],
     }
 
     _log_run(user_id, "dsa_agent", time.time() - start)
@@ -183,7 +183,7 @@ def project_recommender_node(state: dict) -> dict:
     if not state.get("skill_gap"):
         print("[project_recommender_node] no skill_gap in state — skipping")
         return {
-            "completed_agents": state.get("completed_agents", []) + ["project_recommender"],
+            "completed_agents": ["project_recommender"],
         }
 
     projects = recommend_projects(state)
@@ -226,7 +226,7 @@ def project_recommender_node(state: dict) -> dict:
 
     updated = {
         "project_recommendations": saved_projects,
-        "completed_agents": state.get("completed_agents", []) + ["project_recommender"],
+        "completed_agents": ["project_recommender"],
     }
 
     _log_run(user_id, "project_recommender", time.time() - start)
@@ -249,7 +249,7 @@ def interview_node(state: dict) -> dict:
     if not state.get("skill_gap"):
         print("[interview_node] no skill_gap in state — skipping")
         return {
-            "completed_agents": state.get("completed_agents", []) + ["interview_agent"],
+            "completed_agents": ["interview_agent"],
         }
 
     prep_kit = generate_prep_kit(state)
@@ -263,7 +263,7 @@ def interview_node(state: dict) -> dict:
             **current_scores,
             "prep_kit": prep_kit
         },
-        "completed_agents": state.get("completed_agents", []) + ["interview_agent"],
+        "completed_agents": ["interview_agent"],
     }
 
     _log_run(user_id, "interview_agent", time.time() - start)
@@ -273,11 +273,11 @@ def interview_node(state: dict) -> dict:
 def cs_fundamentals_node(state: dict) -> dict:
     """CS Fundamentals prep node."""
     return {
-        "completed_agents": state.get("completed_agents", []) + ["cs_fundamentals_agent"]
+        "completed_agents": ["cs_fundamentals_agent"]
     }
 
 def system_design_node(state: dict) -> dict:
     """System Design prep node."""
     return {
-        "completed_agents": state.get("completed_agents", []) + ["system_design_agent"]
+        "completed_agents": ["system_design_agent"]
     }

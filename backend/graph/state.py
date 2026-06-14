@@ -1,3 +1,4 @@
+import operator
 from typing import TypedDict, Optional, Annotated
 from langgraph.graph.message import add_messages
 
@@ -36,7 +37,7 @@ class PlacementState(TypedDict):
 
     # ── Orchestration ──────────────────────────────────────────────────────
     next_agents: list
-    completed_agents: list
+    completed_agents: Annotated[list, operator.add]
     iteration_count: int
     messages: Annotated[list, add_messages]
 

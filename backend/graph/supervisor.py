@@ -74,7 +74,13 @@ def _llm_route(state: dict) -> list:
             .replace("```", "")
             .strip()
         )
-        return parsed.get("next_agents", [])
+        next_agents = parsed.get("next_agents", [])
+        
+        # STRICT ENFORCEMENT: Never allow LLM to rerun an already completed agent
+        completed = set(state.get("completed_agents", []))
+        next_agents = [a for a in next_agents if a not in completed]
+        
+        return next_agents
     except Exception as e:
         print(f"[supervisor] LLM routing failed: {e}")
         return []  # safe fallback — stops graph cleanly
