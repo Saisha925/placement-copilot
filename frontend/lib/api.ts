@@ -325,11 +325,11 @@ export async function generateSystemDesignChallenge(targetRole: string) {
   return data.challenge
 }
 
-export async function evaluateSystemDesign(challenge: any, userSolution: string) {
+export async function evaluateSystemDesign(challenge: any, userSolution: string, userId: string) {
   const res = await fetch(`${API_URL}/api/system_design/evaluate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ challenge, user_solution: userSolution })
+    body: JSON.stringify({ user_id: userId, challenge, user_solution: userSolution })
   })
   if (!res.ok) throw new Error('Failed to evaluate design')
   const data = await res.json()
