@@ -10,7 +10,7 @@ def generate_career_plan(state: dict) -> dict:
     Uses 70b model for better reasoning quality on complex planning.
     """
     # Use smarter model for planning — this justifies the extra latency
-    llm = get_llm(temperature=0.4, model="llama-3.3-70b-versatile")
+    llm = get_llm(temperature=0.4, model="llama-3.3-70b-versatile", max_tokens=8192)
 
     # Pull everything from shared state
     target_role = state.get("target_role", "Software Engineer")

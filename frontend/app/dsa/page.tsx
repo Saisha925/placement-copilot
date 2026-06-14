@@ -176,7 +176,7 @@ export default function DSAPage() {
       if (result.already_maxed) {
         showToast('warning', result.detail || `"${problemName}" already logged max times`)
       } else {
-        setProgress(result.progress as DSAProgress)
+        setProgress(result.progress as unknown as DSAProgress)
         setProblemName('')
         setTimeTaken('')
         setShowForm(false)
@@ -203,7 +203,7 @@ export default function DSAPage() {
       if (result.already_maxed) {
         // Already logged max times — just mark as checked visually
       } else if (result.progress) {
-        setProgress(result.progress as DSAProgress)
+        setProgress(result.progress as unknown as DSAProgress)
         const updated = await getDSAProblems(userId)
         setProblems(updated)
       }
@@ -231,7 +231,7 @@ export default function DSAPage() {
       if (result.already_maxed) {
         showToast('warning', result.detail || `"${prob.problem}" already logged max times`)
       } else {
-        if (result.progress) setProgress(result.progress as DSAProgress)
+        if (result.progress) setProgress(result.progress as unknown as DSAProgress)
         const updated = await getDSAProblems(userId)
         setProblems(updated)
         showToast('success', `✓ ${prob.problem} logged!`)
@@ -247,7 +247,7 @@ export default function DSAPage() {
     try {
       const result = await refreshDSAPlan(userId)
       if (result.progress) {
-        setProgress(result.progress as DSAProgress)
+        setProgress(result.progress as unknown as DSAProgress)
         setCompletedToday(new Set())
         showToast('success', 'Fresh plan generated!')
       }

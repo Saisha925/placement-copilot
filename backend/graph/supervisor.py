@@ -39,7 +39,7 @@ def _rule_based_route(state: dict) -> list | None:
 
 _SUPERVISOR_PROMPT = """You are the Placement Copilot Supervisor.
 Available agents: resume_agent, skill_gap_agent, career_planner, dsa_agent,
-interview_agent, project_recommender, cs_fundamentals_agent, system_design_agent.
+interview_agent, project_recommender.
 
 Rules:
 - Only recommend agents NOT already in completed_agents.

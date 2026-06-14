@@ -8,9 +8,8 @@ from graph.nodes import (
     career_planner_node,
     dsa_node,
     project_recommender_node,
+    project_recommender_node,
     interview_node,
-    cs_fundamentals_node,
-    system_design_node,
 )
 
 AGENT_NODES: dict = {
@@ -20,8 +19,6 @@ AGENT_NODES: dict = {
     "dsa_agent": dsa_node,
     "project_recommender": project_recommender_node,
     "interview_agent": interview_node,
-    "cs_fundamentals_agent": cs_fundamentals_node,
-    "system_design_agent": system_design_node,
 }
 
 
@@ -48,23 +45,21 @@ def build_graph():
     return g.compile()
 
 
-def _safe_route(state: dict) -> str:
+def _safe_route(state: dict) -> list[str]:
     """
-    Routes to the next registered agent.
-    If the agent isn't built yet, goes to aggregate instead of crashing.
-    This function lives here (not in supervisor.py) so it always has
-    access to the current AGENT_NODES dict.
+    Routes to the next registered agents in parallel!
+    If no agents are built yet, goes to aggregate instead of crashing.
     """
     next_agents = state.get("next_agents", [])
     if not next_agents:
-        return "aggregate"
+        return ["aggregate"]
 
-    for agent in next_agents:
-        if agent in AGENT_NODES:
-            return agent
+    valid_agents = [agent for agent in next_agents if agent in AGENT_NODES]
+    if valid_agents:
+        return valid_agents
 
     print(f"[workflow] agent(s) {next_agents} not yet built — routing to aggregate")
-    return "aggregate"
+    return ["aggregate"]
 
 
 placement_graph = build_graph()

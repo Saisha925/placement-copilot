@@ -207,7 +207,6 @@ def project_recommender_node(state: dict) -> dict:
                 "title": project["title"],
                 "description": project["description"],
                 "tech_stack": project.get("tech_stack", []),
-                "step_by_step": project.get("step_by_step", []),
                 "skills_addressed": project.get("skills_addressed", []),
                 "difficulty": project.get("difficulty", "intermediate"),
                 "estimated_hours": project.get("estimated_hours", 20),
@@ -216,9 +215,11 @@ def project_recommender_node(state: dict) -> dict:
             }
             result = client.table("project_recommendations").insert(row).execute()
             if result.data:
-                saved_projects.append(result.data[0])
+                saved_project = result.data[0]
+                saved_project["step_by_step"] = project.get("step_by_step", [])
+                saved_projects.append(saved_project)
             else:
-                saved_projects.append({"id": str(uuid.uuid4()), **row, "status": "suggested"})
+                saved_projects.append({"id": str(uuid.uuid4()), **row, "step_by_step": project.get("step_by_step", []), "status": "suggested"})
         except Exception as e:
             print(f"[project_recommender_node] insert failed: {e}")
             saved_projects.append({"id": str(uuid.uuid4()), **project, "status": "suggested"})

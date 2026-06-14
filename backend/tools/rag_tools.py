@@ -4,8 +4,8 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import Filter, FieldCondition, MatchValue
 import os
 
-# Load model once at startup (local, fast, free)
-_embed_model = SentenceTransformer("all-MiniLM-L6-v2")
+# Lazy load model
+_embed_model = None
 
 @tool
 def search_knowledge_base(query: str, subject: str = "all", top_k: int = 3) -> list:
@@ -19,6 +19,10 @@ def search_knowledge_base(query: str, subject: str = "all", top_k: int = 3) -> l
         List of relevant text chunks
     """
     try:
+        global _embed_model
+        if _embed_model is None:
+            _embed_model = SentenceTransformer("all-MiniLM-L6-v2")
+            
         vector = _embed_model.encode(query).tolist()
         
         url = os.environ.get("QDRANT_URL")
@@ -32,13 +36,13 @@ def search_knowledge_base(query: str, subject: str = "all", top_k: int = 3) -> l
         if subject != "all":
             flt = Filter(must=[FieldCondition(key="subject", match=MatchValue(value=subject))])
 
-        results = client.search(
+        results = client.query_points(
             collection_name="placement_knowledge",
-            query_vector=vector,
+            query=vector,
             limit=top_k,
             query_filter=flt
-        )
-        return [r.payload.get("text", "") for r in results]
+        ).points
+        return [r.payload.get("text", "") for r in results if r.payload]
     except Exception as e:
         print(f"[rag_tools] Search failed: {e}")
         return [f"Search failed: {str(e)}"]
