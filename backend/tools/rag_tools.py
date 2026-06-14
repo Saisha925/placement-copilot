@@ -1,11 +1,7 @@
 from langchain_core.tools import tool
-from sentence_transformers import SentenceTransformer
 from qdrant_client import QdrantClient
 from qdrant_client.models import Filter, FieldCondition, MatchValue
 import os
-
-# Lazy load model
-_embed_model = None
 
 @tool
 def search_knowledge_base(query: str, subject: str = "all", top_k: int = 3) -> list:
@@ -19,16 +15,27 @@ def search_knowledge_base(query: str, subject: str = "all", top_k: int = 3) -> l
         List of relevant text chunks
     """
     try:
-        global _embed_model
-        if _embed_model is None:
-            _embed_model = SentenceTransformer("all-MiniLM-L6-v2")
-            
-        vector = _embed_model.encode(query).tolist()
-        
         url = os.environ.get("QDRANT_URL")
         api_key = os.environ.get("QDRANT_API_KEY")
+        hf_token = os.environ.get("HF_TOKEN")
+        
         if not url or not api_key:
             return ["Error: Qdrant credentials not configured in environment."]
+        if not hf_token:
+            return ["Error: HF_TOKEN not configured in environment."]
+
+        import requests
+        api_url = "https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2"
+        headers = {"Authorization": f"Bearer {hf_token}"}
+        
+        # Get embedding from API
+        response = requests.post(api_url, headers=headers, json={"inputs": query})
+        
+        if response.status_code != 200:
+            return [f"Error from HF API: {response.text}"]
+            
+        vector = response.json()
+
 
         client = QdrantClient(url=url, api_key=api_key)
 
