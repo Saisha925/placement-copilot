@@ -1,5 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from agents.resume_agent import extract_text_from_pdf, analyze_resume
+from core.state_manager import load_state, save_state
 
 router = APIRouter()
 
@@ -19,6 +20,12 @@ async def analyze_resume_endpoint(
         raise HTTPException(400, "Could not extract text from PDF. Ensure it is not a scanned image.")
 
     result = analyze_resume(resume_text, target_role)
+
+    if user_id and user_id != "anonymous":
+        state = load_state(user_id)
+        state["resume_text"] = resume_text
+        state["resume_analysis"] = result
+        save_state(user_id, state, "resume_agent")
 
     return {
         "success": True,
