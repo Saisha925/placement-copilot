@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from core.database import get_supabase_client
 from core.state_manager import load_state, save_state
+from core.database import get_supabase_client
 from agents.interview_agent import generate_questions, evaluate_answer, analyze_communication
 
 router = APIRouter()
@@ -37,8 +38,25 @@ async def api_generate_questions(req: GenerateQuestionsRequest):
         state = load_state(req.user_id)
         target_company = state.get("target_company")
 
+        # Fetch past questions to avoid duplicates
+        past_questions = []
+        try:
+            client = get_supabase_client()
+            res = client.table("mock_interviews").select("questions_and_answers").eq("user_id", req.user_id).execute()
+            if res.data:
+                for row in res.data:
+                    qna_list = row.get("questions_and_answers", [])
+                    for qna in qna_list:
+                        if isinstance(qna, dict) and "question" in qna:
+                            past_questions.append(qna["question"])
+        except Exception as db_err:
+            print(f"[interview api] Failed to fetch past questions: {db_err}")
+
+        # Fallback to state if frontend sends empty resume_text
+        resume_text = req.resume_text.strip() if req.resume_text.strip() else state.get("resume_text", "")
+
         questions = generate_questions(
-            req.resume_text, req.target_role, req.round_type, req.experience_level, target_company
+            resume_text, req.target_role, req.round_type, req.experience_level, target_company, past_questions
         )
         return {"questions": questions}
     except Exception as e:

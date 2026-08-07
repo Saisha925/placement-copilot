@@ -8,7 +8,6 @@ from graph.nodes import (
     career_planner_node,
     dsa_node,
     project_recommender_node,
-    project_recommender_node,
     interview_node,
 )
 

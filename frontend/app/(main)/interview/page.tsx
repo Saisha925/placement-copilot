@@ -20,7 +20,7 @@ import {
 } from 'lucide-react'
 
 type SessionState = 'setup' | 'active' | 'summary'
-type RoundType = 'HR / Behavioral' | 'Technical' | 'System Design'
+type RoundType = 'HR / Behavioral' | 'Technical' | 'System Design' | 'Resume'
 type ExperienceLevel = 'Student / Fresher' | 'Early Career' | 'Mid Level' | 'Senior'
 
 interface QA {
@@ -31,6 +31,8 @@ interface QA {
     feedback: string
     strengths: string[]
     improvements: string[]
+    ideal_answer?: string
+    better_phrasings?: string[]
   }
   communication?: {
     clarity_score: number
@@ -344,8 +346,8 @@ export default function InterviewPage() {
                   
                   <div className="space-y-3">
                     <Label className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">Select Round Type</Label>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {(['HR / Behavioral', 'Technical', 'System Design'] as RoundType[]).map(type => (
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      {(['HR / Behavioral', 'Technical', 'System Design', 'Resume'] as RoundType[]).map(type => (
                         <div 
                           key={type}
                           onClick={() => setRoundType(type)}
@@ -566,6 +568,46 @@ export default function InterviewPage() {
                             </div>
                           )}
                         </div>
+
+                        {qa.evaluation?.ideal_answer && (
+                          <div className="p-5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-[50px] rounded-full pointer-events-none"></div>
+                            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-3 flex items-center gap-2 relative z-10">
+                              💡 Ideal Answer
+                            </span>
+                            <p className="text-[13px] leading-relaxed text-emerald-100/90 relative z-10 italic">
+                              "{qa.evaluation.ideal_answer}"
+                            </p>
+                          </div>
+                        )}
+
+                        {qa.evaluation?.better_phrasings && qa.evaluation.better_phrasings.length > 0 && (
+                          <div className="p-5 rounded-xl border border-sky-500/20 bg-sky-500/5">
+                            <span className="text-[10px] font-bold text-sky-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                              🔄 How to Phrase It Better
+                            </span>
+                            <div className="space-y-3">
+                              {qa.evaluation.better_phrasings.map((phrase, idx) => {
+                                // Use greedy match .* instead of non-greedy .*? to prevent stopping at apostrophes (e.g. "I've")
+                                const match = phrase.match(/Instead of (['"].*['"]), say (['"].*['"])/i);
+                                if (match) {
+                                  return (
+                                    <div key={idx} className="flex flex-col md:flex-row gap-2 md:items-center text-[12px] bg-black/40 p-3 rounded-lg border border-white/5">
+                                      <div className="flex-1 text-red-300/80 line-through">❌ {match[1]}</div>
+                                      <div className="hidden md:block text-zinc-600">→</div>
+                                      <div className="flex-1 text-emerald-400">✅ {match[2]}</div>
+                                    </div>
+                                  );
+                                }
+                                return (
+                                  <div key={idx} className="text-[12px] text-sky-200/80 bg-black/40 p-3 rounded-lg border border-white/5">
+                                    {phrase}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                         
                         {qa.communication && (
                           <div className="pt-6 border-t border-white/5">

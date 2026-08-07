@@ -1,6 +1,7 @@
 import json
 from core.llm import get_llm
 from langchain_core.messages import HumanMessage
+from agents.resource_agent import fetch_resources
 
 
 def recommend_projects(state: dict) -> list:
@@ -45,35 +46,33 @@ Skills the student already has: {', '.join(existing_skills[:10])}
 
 Generate exactly 3 portfolio projects that:
 1. Directly address the skill gaps listed above
-2. Are impressive enough for placement interviews
-3. Progress in difficulty (beginner → intermediate → advanced)
-4. Use real-world technologies companies actually care about
-5. Can realistically be completed by a student
+2. Are extremely UNIQUE, INNOVATIVE, and out-of-the-box. Do NOT recommend standard CRUD apps, generic to-do lists, or basic chat apps.
+3. Think about cutting-edge technologies or interesting niches (e.g., AI tools, Web3, creative coding, devtools, IoT integrations, complex data visualizations).
+4. Progress in difficulty (beginner → intermediate → advanced)
+5. Can realistically be completed by a student but look very impressive.
 
 Return ONLY valid JSON — an array of 3 objects:
 [
   {{
     "title": "Project Name",
-    "description": "2-3 sentence description of what the project does and why it's impressive",
-    "tech_stack": ["React", "Node.js", "MongoDB"],
+    "description": "2-3 sentence description of what the project does and why it's highly innovative.",
+    "tech_stack": ["Tech1", "Tech2", "Tech3"],
     "step_by_step": [
-      "Step 1: Set up the project with Create React App and Express backend",
-      "Step 2: Design the database schema",
-      "Step 3: Build the REST API endpoints",
-      "Step 4: Create the frontend components",
-      "Step 5: Add authentication",
-      "Step 6: Deploy to Vercel/Railway"
+      "Step 1: ...",
+      "Step 2: ..."
     ],
-    "skills_addressed": ["React", "Node.js", "REST API"],
+    "skills_addressed": ["Skill1", "Skill2"],
     "difficulty": "beginner",
     "estimated_hours": 15,
-    "why_this_project": "One sentence explaining why this project specifically helps with the target role"
+    "why_this_project": "One sentence explaining why this project stands out to recruiters.",
+    "inspiration_keywords": "github open source project name to search for inspiration"
   }}
 ]
 
 Difficulty must be one of: beginner, intermediate, advanced.
 Each project should have 5-8 clear steps.
-estimated_hours should be realistic (10-40 hours range)."""
+estimated_hours should be realistic (10-40 hours range).
+CRITICAL: The projects must be innovative. Avoid generic projects at all costs."""
 
     try:
         response = llm.invoke([HumanMessage(content=prompt)])
@@ -93,6 +92,17 @@ estimated_hours should be realistic (10-40 hours range)."""
             for field in required_fields:
                 if field not in project:
                     raise ValueError(f"Missing field: {field}")
+            
+            # Fetch inspiration link
+            try:
+                search_query = project.get("inspiration_keywords", project["title"]) + " github repository"
+                resources = fetch_resources(search_query, category="general", max_results=1)
+                if resources:
+                    project["inspiration_link"] = resources[0]["url"]
+                else:
+                    project["inspiration_link"] = f"https://github.com/search?q={project['title'].replace(' ', '+')}"
+            except Exception:
+                project["inspiration_link"] = ""
 
         return projects[:3]
 
@@ -105,57 +115,58 @@ def _fallback_projects(gaps: list, target_role: str) -> list:
     """Hardcoded fallback projects when LLM fails."""
     return [
         {
-            "title": "Personal Portfolio Website",
-            "description": "A responsive portfolio website showcasing your projects, skills, and resume. Includes dark mode, animations, and a contact form with email integration.",
-            "tech_stack": ["React", "Tailwind CSS", "Framer Motion", "EmailJS"],
+            "title": "AI-Powered Resume Analyzer",
+            "description": "A web app that takes a PDF resume and a job description, then uses an LLM API to score the match and suggest missing keywords. Highly relevant to HR tech.",
+            "tech_stack": ["React", "FastAPI", "OpenAI API", "PyPDF2"],
             "step_by_step": [
-                "Set up React project with Vite and Tailwind CSS",
-                "Design the layout — hero, about, projects, contact sections",
-                "Build reusable components (Navbar, ProjectCard, Footer)",
-                "Add smooth scroll and page transitions with Framer Motion",
-                "Integrate contact form with EmailJS",
-                "Deploy to Vercel with custom domain"
+                "Set up React frontend and FastAPI backend",
+                "Implement PDF upload and text extraction in Python",
+                "Integrate with OpenAI API to analyze text against JD",
+                "Build a scoring algorithm based on keyword matches",
+                "Create a dashboard to visualize score and missing skills",
+                "Deploy backend to Render and frontend to Vercel"
             ],
-            "skills_addressed": gaps[:3] if gaps else ["React", "CSS", "Deployment"],
+            "skills_addressed": gaps[:3] if gaps else ["React", "Python", "AI Integration"],
             "difficulty": "beginner",
-            "estimated_hours": 12,
-            "why_this_project": f"Every {target_role} needs a portfolio — this proves you can ship a polished frontend."
+            "estimated_hours": 15,
+            "why_this_project": f"Shows you can integrate modern AI tools into practical web applications.",
+            "inspiration_link": "https://github.com/search?q=resume+analyzer+ai"
         },
         {
-            "title": "Task Management API",
-            "description": "A full-featured REST API with user authentication, CRUD operations, role-based access control, and real-time notifications. Includes Swagger docs and automated tests.",
-            "tech_stack": ["Node.js", "Express", "PostgreSQL", "JWT", "Jest"],
+            "title": "Distributed Task Queue Visualizer",
+            "description": "A real-time dashboard that visualizes background jobs processing across multiple workers, simulating a distributed system. Includes intentional failure handling.",
+            "tech_stack": ["Node.js", "Redis", "BullMQ", "React", "Socket.io"],
             "step_by_step": [
-                "Initialize Express project with TypeScript",
-                "Design PostgreSQL schema for users, tasks, and teams",
-                "Build CRUD endpoints for tasks with validation",
-                "Add JWT-based authentication and role middleware",
-                "Write integration tests with Jest and Supertest",
-                "Add Swagger/OpenAPI documentation",
-                "Deploy to Railway with CI/CD pipeline"
+                "Set up a Redis instance and BullMQ for task queueing",
+                "Create a producer script that generates random jobs (e.g. image processing, emails)",
+                "Create multiple worker nodes that process and occasionally fail jobs",
+                "Build an Express API to expose queue stats",
+                "Implement WebSocket connection to push live updates to the frontend",
+                "Build a React dashboard to visualize queue length, active workers, and failure rates",
+                "Dockerize the entire setup"
             ],
-            "skills_addressed": gaps[:3] if gaps else ["Backend", "SQL", "Authentication"],
+            "skills_addressed": gaps[:3] if gaps else ["Redis", "Distributed Systems", "WebSockets"],
             "difficulty": "intermediate",
-            "estimated_hours": 20,
-            "why_this_project": f"Backend API design is a core skill for {target_role} — this covers auth, testing, and deployment."
+            "estimated_hours": 25,
+            "why_this_project": f"Proves you understand asynchronous processing and distributed architectures, a must for {target_role}.",
+            "inspiration_link": "https://github.com/search?q=bullmq+dashboard+react"
         },
         {
-            "title": "Real-time Chat Application",
-            "description": "A Slack-like chat app with channels, direct messages, file sharing, and online presence indicators. Uses WebSockets for real-time communication and Redis for session management.",
-            "tech_stack": ["React", "Socket.io", "Node.js", "Redis", "MongoDB"],
+            "title": "Git Internal Visualizer / Clone",
+            "description": "A CLI tool built from scratch that implements core Git commands (init, add, commit, log) to demonstrate deep understanding of hashes, trees, and blobs.",
+            "tech_stack": ["Python", "CLI Design", "Hashing (SHA-1)", "File I/O"],
             "step_by_step": [
-                "Set up React frontend and Express + Socket.io backend",
-                "Design MongoDB schemas for users, channels, and messages",
-                "Implement real-time messaging with Socket.io rooms",
-                "Add user authentication and session management with Redis",
-                "Build channel management (create, join, leave)",
-                "Add file upload with cloud storage (S3 or Cloudinary)",
-                "Implement typing indicators and online presence",
-                "Deploy with Docker Compose"
+                "Implement the 'init' command to create the .mygit directory structure",
+                "Implement the 'hash-object' command to store file contents as blobs",
+                "Implement the 'add' command to stage files to an index",
+                "Implement the 'commit' command to create tree objects and commit objects",
+                "Implement the 'log' command to traverse the commit history",
+                "Write extensive unit tests for core hashing and tree logic"
             ],
-            "skills_addressed": gaps[:3] if gaps else ["WebSockets", "Redis", "System Design"],
+            "skills_addressed": gaps[:3] if gaps else ["Python", "System Design", "Low-level Concepts"],
             "difficulty": "advanced",
-            "estimated_hours": 35,
-            "why_this_project": f"Real-time systems and infrastructure are interview gold for {target_role} roles."
+            "estimated_hours": 40,
+            "why_this_project": f"Rebuilding standard developer tools from scratch shows incredible depth of knowledge for a {target_role}.",
+            "inspiration_link": "https://github.com/search?q=build+git+from+scratch"
         },
     ]

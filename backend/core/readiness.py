@@ -49,14 +49,50 @@ def calculate_readiness(state: dict) -> int:
     if sd := state.get("system_design_scores"):
         sd_score = rolling_avg(sd.get("history", []), "score", 5)
 
+    plan_score = 0
+    if cp := state.get("career_plan"):
+        total_topics = 0
+        def count_topics_in_weeks(weeks):
+            nonlocal total_topics
+            if not weeks: return
+            for w in weeks:
+                for d in w.get("days") or []:
+                    morning = d.get("morning") or {}
+                    total_topics += len(morning.get("topics") or [])
+                    
+                    evening = d.get("evening") or {}
+                    total_topics += len(evening.get("topics") or [])
+                    
+                for t in w.get("weekly_tasks") or []:
+                    total_topics += len(t.get("topics") or [])
+        
+        plan_format = cp.get("format")
+        if plan_format == "days":
+            count_topics_in_weeks([{"days": cp.get("days", [])}])
+        elif plan_format in ["weeks", "weekly_summary"]:
+            count_topics_in_weeks(cp.get("weeks", []))
+        else:
+            # Legacy fallback
+            count_topics_in_weeks(cp.get("plan_30_day"))
+            count_topics_in_weeks(cp.get("plan_60_day"))
+            count_topics_in_weeks(cp.get("plan_90_day"))
+            
+            for phase in cp.get("phases") or []:
+                count_topics_in_weeks(phase.get("weeks") or [])
+            
+        completed = len(state.get("completed_plan_topics") or [])
+        if total_topics > 0:
+            plan_score = min(100, (completed / total_topics) * 100)
+
     raw = (
-        resume_score    * 0.15 +
-        dsa_score       * 0.20 +
+        resume_score    * 0.10 +
+        dsa_score       * 0.15 +
         cs_score        * 0.15 +
-        sd_score        * 0.15 +
+        sd_score        * 0.10 +
         interview_score * 0.15 +
         comm_score      * 0.10 +
-        project_score   * 0.10
+        project_score   * 0.10 +
+        plan_score      * 0.15
     )
 
     return max(0, min(100, int(raw)))

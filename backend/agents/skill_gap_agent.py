@@ -89,19 +89,42 @@ Return ONLY a JSON object with this exact structure, no markdown, no explanation
 
     try:
         response = llm.invoke([HumanMessage(content=prompt)])
-        text = response.content.strip().replace("```json", "").replace("```", "").strip()
+        text = response.content.strip()
+        if "```json" in text:
+            text = text.split("```json", 1)[1]
+        if "```" in text:
+            text = text.split("```", 1)[0]
+        text = text.strip()
         result = json.loads(text)
         
         matched = result.get("matched_skills", [])
         missing_required = result.get("missing_required", required_skills)
         missing_preferred = result.get("missing_preferred", preferred_skills)
         roadmap = result.get("roadmap", [])
-    except Exception as e:
-        print(f"[skill_gap_agent] roadmap generation failed: {e}")
-        matched = []
-        missing_required = required_skills
-        missing_preferred = preferred_skills
-        roadmap = []
+    except Exception as first_err:
+        print(f"[skill_gap_agent] first attempt failed: {first_err}")
+        print("[skill_gap_agent] retrying without json_mode...")
+        try:
+            llm_retry = get_llm(temperature=0.4, model="llama-3.3-70b-versatile", max_tokens=4096, json_mode=False)
+            response = llm_retry.invoke([HumanMessage(content=prompt)])
+            text = response.content.strip()
+            if "```json" in text:
+                text = text.split("```json", 1)[1]
+            if "```" in text:
+                text = text.split("```", 1)[0]
+            text = text.strip()
+            result = json.loads(text)
+            
+            matched = result.get("matched_skills", [])
+            missing_required = result.get("missing_required", required_skills)
+            missing_preferred = result.get("missing_preferred", preferred_skills)
+            roadmap = result.get("roadmap", [])
+        except Exception as e:
+            print(f"[skill_gap_agent] retry failed: {e}")
+            matched = []
+            missing_required = required_skills
+            missing_preferred = preferred_skills
+            roadmap = []
 
     # Calculate percentage based on required skills matched
     required_matched = [s for s in matched if s in required_skills]

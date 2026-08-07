@@ -8,6 +8,8 @@ from api.routes.interview import router as interview_router
 from api.routes import cs_fundamentals
 from api.routes import system_design
 from api.routes import settings
+from api.routes.resources import router as resources_router
+from api.routes import career_plan
 
 app = FastAPI(title="Placement Copilot API")
 
@@ -27,6 +29,8 @@ app.include_router(interview_router, prefix="/api/interview", tags=["interview"]
 app.include_router(cs_fundamentals.router, prefix="/api/cs_fundamentals", tags=["CS Fundamentals"])
 app.include_router(system_design.router, prefix="/api/system_design", tags=["system_design"])
 app.include_router(settings.router, prefix="/api/settings", tags=["settings"])
+app.include_router(resources_router, prefix="/api/resources", tags=["resources"])
+app.include_router(career_plan.router, prefix="/api/career-plan", tags=["career-plan"])
 
 @app.get("/health")
 def health_check():

@@ -1,11 +1,6 @@
 from supabase import create_client, Client
 from core.config import SUPABASE_URL, SUPABASE_SERVICE_KEY
 
-_client: Client | None = None
-
 def get_supabase_client() -> Client:
-    """Returns a singleton Supabase client."""
-    global _client
-    if _client is None:
-        _client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-    return _client
+    """Returns a new Supabase client per request to avoid Windows socket concurrency issues."""
+    return create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)

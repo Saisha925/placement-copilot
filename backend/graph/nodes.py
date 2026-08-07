@@ -131,9 +131,18 @@ def dsa_node(state: dict) -> dict:
 
     career_plan_week = {}
     if cp := state.get("career_plan"):
-        weeks = cp.get("plan_30_day", [])
-        if weeks:
-            career_plan_week = weeks[0]
+        plan_format = cp.get("format")
+        if plan_format == "days":
+            career_plan_week = {"days": cp.get("days", [])[:7]}
+        elif plan_format == "weeks" and cp.get("weeks"):
+            career_plan_week = cp["weeks"][0]
+        elif plan_format == "weekly_summary" and cp.get("weeks"):
+            career_plan_week = cp["weeks"][0]
+        else:
+            # Legacy fallback
+            weeks = cp.get("plan_30_day", [])
+            if weeks:
+                career_plan_week = weeks[0]
 
     # Get existing progress first
     progress = get_progress(user_id)
@@ -268,16 +277,4 @@ def interview_node(state: dict) -> dict:
 
     _log_run(user_id, "interview_agent", time.time() - start)
     save_state(user_id, {**state, **updated}, "interview_agent")
-    return updated
-
-def cs_fundamentals_node(state: dict) -> dict:
-    """CS Fundamentals prep node."""
-    return {
-        "completed_agents": ["cs_fundamentals_agent"]
-    }
-
-def system_design_node(state: dict) -> dict:
-    """System Design prep node."""
-    return {
-        "completed_agents": ["system_design_agent"]
-    }
+    return updated

@@ -9,7 +9,7 @@ def search_knowledge_base(query: str, subject: str = "all", top_k: int = 3) -> l
     
     Args:
         query:   What to search for, e.g. "explain DBMS indexing"
-        subject: Filter — "dbms", "os", "cn", "oops", "ml", or "all"
+        subject: Filter — "dbms", "os", "cn", "oops", "ml", "dsa", "system_design", or "all"
         top_k:   Number of results
     Returns:
         List of relevant text chunks

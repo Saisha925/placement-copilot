@@ -1,8 +1,10 @@
 import json
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone, date, timedelta
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from core.llm import get_llm
 from core.database import get_supabase_client
 from langchain_core.messages import HumanMessage
+from agents.resource_agent import fetch_resources
 
 
 # ── Problem tracking ──────────────────────────────────────────────────────────
@@ -258,6 +260,123 @@ def _compute_urgency(target_date: str | None, daily_hours: int) -> dict:
 
 # ── Daily plan generation ─────────────────────────────────────────────────────
 
+# ── Calendar and Dual-Mode Plan generation ────────────────────────────────────
+
+def sync_from_career_plan(user_id: str, career_plan: dict) -> dict:
+    """
+    Extracts DSA tasks from the career plan and writes them to the calendar.
+    """
+    client = get_supabase_client()
+    
+    entries = []
+    
+    def process_day(date_str, morning, evening):
+        dsa_task = None
+        if morning and morning.get("category") == "dsa":
+            dsa_task = morning
+        elif evening and evening.get("category") == "dsa":
+            dsa_task = evening
+            
+        if dsa_task and date_str:
+            topic = dsa_task.get("topics", ["General DSA"])[0]
+            entries.append({
+                "user_id": user_id,
+                "date": date_str,
+                "topic": topic,
+                "source": "career_plan",
+                "problems": []
+            })
+            
+    plan_format = career_plan.get("format")
+    
+    if plan_format == "days":
+        for day in career_plan.get("days", []):
+            process_day(day.get("date"), day.get("morning"), day.get("evening"))
+            
+    elif plan_format == "weeks":
+        for week in career_plan.get("weeks", []):
+            for day in week.get("days", []):
+                process_day(day.get("date"), day.get("morning"), day.get("evening"))
+                
+    elif plan_format == "weekly_summary":
+        import datetime
+        for week in career_plan.get("weeks", []):
+            tasks = [t for t in week.get("weekly_tasks", []) if t.get("category") == "dsa"]
+            if not tasks:
+                continue
+            start_date_str = week.get("start_date")
+            if not start_date_str:
+                continue
+            try:
+                start_date = datetime.date.fromisoformat(start_date_str)
+            except ValueError:
+                continue
+            
+            # Distribute tasks uniformly over the 7 days
+            for i, task in enumerate(tasks):
+                offset = int((i / len(tasks)) * 7)
+                date_str = (start_date + datetime.timedelta(days=offset)).isoformat()
+                topic = task.get("topics", ["General DSA"])[0]
+                entries.append({
+                    "user_id": user_id,
+                    "date": date_str,
+                    "topic": topic,
+                    "source": "career_plan",
+                    "problems": []
+                })
+                
+    else:
+        # Legacy fallback
+        found_any = False
+        
+        # Check plan_30_day, plan_60_day, plan_90_day
+        for legacy_key in ["plan_30_day", "plan_60_day", "plan_90_day"]:
+            for week in career_plan.get(legacy_key, []):
+                found_any = True
+                for day in week.get("days", []):
+                    process_day(day.get("date"), day.get("morning"), day.get("evening"))
+                    
+        # Check phases
+        phases = career_plan.get("phases", [])
+        if phases:
+            found_any = True
+            for phase in phases:
+                for week in phase.get("weeks", []):
+                    for day in week.get("days", []):
+                        process_day(day.get("date"), day.get("morning"), day.get("evening"))
+                        
+        if not found_any:
+            return {"success": False, "message": "No recognized plan format or phases found"}
+    
+    # We will enrich each entry with problems using a fast LLM call
+    if entries:
+        llm = get_llm(temperature=0.3)
+        for entry in entries:
+            topic = entry["topic"]
+            prompt = f"Provide 3 LeetCode problems for the DSA topic: {topic}. Return ONLY valid JSON array of objects: [{{\"problem\": \"Name\", \"difficulty\": \"easy|medium|hard\", \"link\": \"https://leetcode.com/...\"}}]"
+            try:
+                response = llm.invoke([HumanMessage(content=prompt)])
+                text = response.content.strip().replace("```json", "").replace("```", "").strip()
+                problems = json.loads(text)
+                for p in problems:
+                    p["solved"] = False
+                    p["notes_link"] = fetch_resources(p["problem"] + " " + topic, category="dsa", max_results=1)[0]["url"] if fetch_resources(p["problem"] + " " + topic, category="dsa", max_results=1) else ""
+                entry["problems"] = problems
+            except:
+                entry["problems"] = []
+                
+        # Upsert entries
+        for entry in entries:
+            try:
+                # Use a combined unique key or delete existing for this user/date/source
+                client.table("dsa_calendar_entries").delete().eq("user_id", user_id).eq("date", entry["date"]).eq("source", "career_plan").execute()
+                client.table("dsa_calendar_entries").insert(entry).execute()
+            except Exception as e:
+                print(f"[dsa_agent] sync entry failed: {e}")
+                
+    return {"success": True, "entries_synced": len(entries)}
+
+
 def generate_daily_plan(
     weak_topics: list,
     skill_gap_priorities: list,
@@ -265,29 +384,28 @@ def generate_daily_plan(
     user_profile: dict | None,
     target_date: str | None = None,
     solved_problems: list | None = None,
+    custom_prompt: str | None = None,
+    plan_duration_days: int = 7,
+    specific_topics: list = None,
+    mode: str = "custom"
 ) -> dict:
     """
     Generate a personalised daily DSA practice plan.
-    - Combines weak_topics + skill_gap_priorities
-    - Uses urgency from target_date to calibrate intensity
-    - Excludes already-solved problems from recommendations
-    - Generates specific problems per day in the weekly plan
+    Supports 'custom' independent mode.
     """
     llm = get_llm(temperature=0.4)
 
-    # Skill gap priorities take precedence over general weak topics
-    priority_topics = list(dict.fromkeys(skill_gap_priorities + weak_topics))[:6]
+    # Specific topics override others
+    if specific_topics and len(specific_topics) > 0:
+        priority_topics = specific_topics[:6]
+    else:
+        priority_topics = list(dict.fromkeys(skill_gap_priorities + weak_topics))[:6]
+        if not priority_topics:
+            priority_topics = ["Arrays", "Strings", "Binary Search"]
 
     daily_hours = (user_profile or {}).get("daily_hours", 2)
-    week_focus = career_plan_week.get("focus_area", "general DSA practice")
-
-    if not priority_topics:
-        priority_topics = ["Arrays", "Strings", "Binary Search"]
-
-    # Compute urgency
     urgency = _compute_urgency(target_date, daily_hours)
 
-    # Build exclusion context
     solved_list = solved_problems or []
     exclusion_text = ""
     if solved_list:
@@ -295,92 +413,41 @@ def generate_daily_plan(
 
     urgency_text = ""
     if urgency["weeks_remaining"]:
-        urgency_text = f"""
-Urgency: {urgency['urgency'].upper()} — only {urgency['weeks_remaining']} weeks until placement!
-Difficulty distribution: {urgency['difficulty_guidance']}"""
+        urgency_text = f"Urgency: {urgency['urgency'].upper()} — {urgency['weeks_remaining']} weeks until placement!\nDifficulty distribution: {urgency['difficulty_guidance']}"
+
+    today_date = date.today()
+    custom_prompt_text = ""
+    if custom_prompt:
+        custom_prompt_text = f"\n\nUSER'S CUSTOM REQUEST: {custom_prompt}\nCRITICAL: You MUST strictly tailor this plan to the user's custom request above."
 
     prompt = f"""You are a DSA coach preparing a student for placement interviews.
 
-Priority topics (from skill gap analysis): {', '.join(priority_topics)}
-Problems student should solve per day: {urgency['problems_per_day']}
-Daily hours available: {daily_hours}
-Current week focus from career plan: {week_focus}
+Priority topics: {', '.join(priority_topics)}
+Problems per day: {urgency['problems_per_day']}
+Plan duration: {plan_duration_days} days
 {urgency_text}
 {exclusion_text}
 
 Generate a focused daily DSA practice plan with SPECIFIC real LeetCode problem names.
+{custom_prompt_text}
 
 IMPORTANT:
-1. Recommend REAL problems that exist on LeetCode/GFG (e.g., "Two Sum", "Valid Parentheses", "Merge Intervals").
+1. Recommend REAL problems that exist on LeetCode/GFG (e.g., "Two Sum").
 2. Include proper LeetCode URLs (e.g., "https://leetcode.com/problems/two-sum/").
-3. For the weekly plan, include {urgency['problems_per_day']} specific problems per day with links.
+3. Generate exactly {plan_duration_days} days of problems. Use EXACT calendar dates starting from {today_date.isoformat()} sequentially.
 4. Do NOT recommend any problems from the already-solved list.
+5. Provide a brief explanation for why each problem is recommended.
 
 Return ONLY valid JSON:
 {{
-  "today": [
+  "mode": "{mode}",
+  "duration_days": {plan_duration_days},
+  "calendar_entries": [
     {{
-      "topic": "Arrays",
-      "problem": "Two Sum",
-      "difficulty": "easy",
-      "platform": "LeetCode",
-      "link": "https://leetcode.com/problems/two-sum/",
-      "why": "Fundamental array+hashmap problem, asked in 90% of interviews"
-    }}
-  ],
-  "this_week": [
-    {{
-      "day": "Monday",
+      "date": "{today_date.isoformat()}",
       "topic": "Arrays",
       "problems": [
-        {{"problem": "Two Sum", "difficulty": "easy", "link": "https://leetcode.com/problems/two-sum/"}},
-        {{"problem": "Best Time to Buy and Sell Stock", "difficulty": "easy", "link": "https://leetcode.com/problems/best-time-to-buy-and-sell-stock/"}}
-      ]
-    }},
-    {{
-      "day": "Tuesday",
-      "topic": "Strings",
-      "problems": [
-        {{"problem": "Valid Anagram", "difficulty": "easy", "link": "https://leetcode.com/problems/valid-anagram/"}},
-        {{"problem": "Longest Substring Without Repeating Characters", "difficulty": "medium", "link": "https://leetcode.com/problems/longest-substring-without-repeating-characters/"}}
-      ]
-    }},
-    {{
-      "day": "Wednesday",
-      "topic": "Binary Search",
-      "problems": [
-        {{"problem": "Binary Search", "difficulty": "easy", "link": "https://leetcode.com/problems/binary-search/"}}
-      ]
-    }},
-    {{
-      "day": "Thursday",
-      "topic": "Arrays",
-      "problems": [
-        {{"problem": "Container With Most Water", "difficulty": "medium", "link": "https://leetcode.com/problems/container-with-most-water/"}},
-        {{"problem": "3Sum", "difficulty": "medium", "link": "https://leetcode.com/problems/3sum/"}}
-      ]
-    }},
-    {{
-      "day": "Friday",
-      "topic": "Linked Lists",
-      "problems": [
-        {{"problem": "Reverse Linked List", "difficulty": "easy", "link": "https://leetcode.com/problems/reverse-linked-list/"}}
-      ]
-    }},
-    {{
-      "day": "Saturday",
-      "topic": "Revision",
-      "problems": [
-        {{"problem": "Merge Intervals", "difficulty": "medium", "link": "https://leetcode.com/problems/merge-intervals/"}},
-        {{"problem": "Product of Array Except Self", "difficulty": "medium", "link": "https://leetcode.com/problems/product-of-array-except-self/"}}
-      ]
-    }},
-    {{
-      "day": "Sunday",
-      "topic": "Mixed Practice",
-      "problems": [
-        {{"problem": "Valid Parentheses", "difficulty": "easy", "link": "https://leetcode.com/problems/valid-parentheses/"}},
-        {{"problem": "Group Anagrams", "difficulty": "medium", "link": "https://leetcode.com/problems/group-anagrams/"}}
+        {{"problem": "Two Sum", "difficulty": "easy", "link": "https://leetcode.com/problems/two-sum/", "notes_link": "", "solved": false}}
       ]
     }}
   ],
@@ -391,12 +458,34 @@ Return ONLY valid JSON:
     try:
         response = llm.invoke([HumanMessage(content=prompt)])
         text = response.content.strip().replace("```json", "").replace("```", "").strip()
-        return json.loads(text)
+        plan = json.loads(text)
+        
+        # Enrich with resource_agent concurrently
+        def fetch_for_prob(prob, topic):
+            prob_name = prob.get("problem", "")
+            # Fetch 2 resources to give options
+            resources = fetch_resources(f"{prob_name} {topic}", category="dsa", max_results=2)
+            if resources:
+                prob["notes_link"] = resources[0]["url"]
+            else:
+                prob["notes_link"] = f"https://www.google.com/search?q=site:takeuforward.org+{prob_name.replace(' ', '+')}"
+
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = []
+            for entry in plan.get("calendar_entries", []):
+                for prob in entry.get("problems", []):
+                    topic = entry.get("topic", "")
+                    futures.append(executor.submit(fetch_for_prob, prob, topic))
+            for future in as_completed(futures):
+                future.result() # Catch exceptions if any
+                
+        return plan
     except Exception as e:
         print(f"[dsa_agent] daily plan generation failed: {e}")
         return {
-            "today": [],
-            "this_week": [],
-            "focus_message": "Focus on fundamentals today.",
-            "tip": "Solve 2 easy problems before attempting medium ones."
+            "mode": mode,
+            "duration_days": plan_duration_days,
+            "calendar_entries": [],
+            "focus_message": "Could not generate plan.",
+            "tip": "Try refreshing again."
         }

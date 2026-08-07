@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   FolderGit2, Loader2, RefreshCw, CheckCircle, AlertTriangle,
   ChevronDown, ChevronUp, Clock, Zap, Rocket, Play, PartyPopper,
-  Sparkles, ArrowRight, BookOpen
+  Sparkles, ArrowRight, BookOpen, ExternalLink
 } from 'lucide-react'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -23,6 +23,7 @@ interface Project {
   difficulty: string
   estimated_hours: number
   why_this_project: string
+  inspiration_link?: string
   status: string
   created_at?: string
 }
@@ -179,6 +180,20 @@ function ProjectCard({
                 </motion.div>
               )}
             </AnimatePresence>
+          </div>
+        )}
+
+        {project.inspiration_link && (
+          <div className="pt-2 flex justify-start">
+            <a 
+              href={project.inspiration_link} 
+              target="_blank" 
+              rel="noreferrer"
+              className="flex items-center gap-2 text-[12px] font-bold text-sky-400 bg-sky-500/10 border border-sky-500/20 px-4 py-2 rounded-lg hover:bg-sky-500/20 transition-all"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              View Inspiration Code
+            </a>
           </div>
         )}
 

@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001'
 
 export async function analyzeResume(file: File, targetRole: string, userId: string) {
   const formData = new FormData()
@@ -273,13 +273,64 @@ export async function updateProblemNotes(userId: string, problemId: string, note
   return res.json()
 }
 
-export async function refreshDSAPlan(userId: string) {
+export async function refreshDSAPlan(
+  userId: string, 
+  customPrompt?: string,
+  mode: string = "custom",
+  durationDays: number = 7,
+  specificTopics?: string[]
+) {
   const res = await fetch(`${API_URL}/api/dsa/refresh-plan`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      user_id: userId, 
+      custom_prompt: customPrompt,
+      mode,
+      duration_days: durationDays,
+      specific_topics: specificTopics
+    }),
+  })
+  if (!res.ok) throw new Error('Failed to refresh plan')
+  return res.json()
+}
+
+export async function getDSACalendar(userId: string) {
+  const res = await fetch(`${API_URL}/api/dsa/calendar/${userId}`)
+  if (!res.ok) throw new Error('Failed to fetch DSA calendar')
+  const data = await res.json()
+  return data.entries || []
+}
+
+export async function syncCareerPlan(userId: string) {
+  const res = await fetch(`${API_URL}/api/dsa/sync-career-plan`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ user_id: userId }),
   })
-  if (!res.ok) throw new Error('Failed to refresh plan')
+  if (!res.ok) throw new Error('Failed to sync career plan')
+  return res.json()
+}
+
+export async function solveCalendarProblem(
+  userId: string, 
+  date: string, 
+  problemName: string, 
+  source: string = "custom",
+  timeTakenMins?: number
+) {
+  const res = await fetch(`${API_URL}/api/dsa/calendar/solve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      user_id: userId, 
+      date, 
+      problem_name: problemName,
+      source,
+      time_taken_mins: timeTakenMins
+    }),
+  })
+  if (!res.ok) throw new Error('Failed to mark calendar problem as solved')
   return res.json()
 }
 
@@ -334,4 +385,76 @@ export async function evaluateSystemDesign(challenge: any, userSolution: string,
   if (!res.ok) throw new Error('Failed to evaluate design')
   const data = await res.json()
   return data.evaluation
+}
+
+// ── Resources API ────────────────────────────────────────────────────────────
+
+export async function searchResources(topic: string, category: string = 'general', maxResults: number = 3) {
+  const res = await fetch(`${API_URL}/api/resources/search`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ topic, category, max_results: maxResults })
+  })
+  if (!res.ok) throw new Error('Failed to search resources')
+  const data = await res.json()
+  return data.resources || []
+}
+
+// ── Career Plan API ─────────────────────────────────────────────────────────
+
+export async function togglePlanTopic(userId: string, topicId: string, completed: boolean) {
+  const res = await fetch(`${API_URL}/api/career-plan/toggle-topic`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId, topic_id: topicId, completed }),
+  })
+  if (!res.ok) throw new Error('Failed to toggle plan topic')
+  return res.json()
+}
+
+export async function fetchCompletedPlanTopics(userId: string) {
+  const res = await fetch(`${API_URL}/api/career-plan/completed-topics?user_id=${userId}`)
+  if (!res.ok) return []
+  const data = await res.json()
+  return data.completed_topics || []
+}
+
+export async function saveCareerPlan(userId: string, goal: string, targetRole: string, planData: any) {
+  const res = await fetch(`${API_URL}/api/career-plan/save`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId, goal, target_role: targetRole, plan_data: planData }),
+  })
+  if (!res.ok) throw new Error('Failed to save career plan')
+  return res.json()
+}
+
+export async function getActiveCareerPlan(userId: string) {
+  const url = `${API_URL}/api/career-plan/active?user_id=${userId}`;
+  const res = await fetch(url)
+  if (!res.ok) {
+    console.error(`getActiveCareerPlan failed: ${res.status} ${res.statusText} at ${url}`);
+    throw new Error('Failed to fetch active career plan')
+  }
+  return res.json()
+}
+
+export async function getCareerPlanHistory(userId: string) {
+  const url = `${API_URL}/api/career-plan/history?user_id=${userId}`;
+  const res = await fetch(url)
+  if (!res.ok) {
+    console.error(`getCareerPlanHistory failed: ${res.status} ${res.statusText} at ${url}`);
+    throw new Error('Failed to fetch career plan history')
+  }
+  return res.json()
+}
+
+export async function activateCareerPlan(userId: string, planId: string) {
+  const res = await fetch(`${API_URL}/api/career-plan/activate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId, plan_id: planId }),
+  })
+  if (!res.ok) throw new Error('Failed to activate career plan')
+  return res.json()
 }
