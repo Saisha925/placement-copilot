@@ -1,4 +1,12 @@
+import { createClient } from './supabase'
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001'
+
+async function getAuthToken() {
+  const supabase = createClient();
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token || '';
+}
 
 export async function analyzeResume(file: File, targetRole: string, userId: string) {
   const formData = new FormData()
@@ -351,6 +359,40 @@ export async function updateProjectStatus(projectId: string, userId: string, sta
   })
   if (!res.ok) throw new Error('Failed to update project status')
   return res.json()
+}
+
+export async function generateProjectRecommendations() {
+  const res = await fetch(`${API_URL}/projects/recommendations`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${await getAuthToken()}` }
+  });
+  if (!res.ok) throw new Error('Failed to generate project recommendations');
+  return res.json();
+}
+
+export async function askHelpDesk(message: string, currentPath: string, history: {role: string, content: string}[]) {
+  const supabase = createClient();
+  const user = await supabase.auth.getUser();
+  const userId = user.data.user?.id || 'anonymous';
+  
+  const res = await fetch(`${API_URL}/api/helpdesk/ask`, {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${await getAuthToken()}`
+    },
+    body: JSON.stringify({
+      user_id: userId,
+      message,
+      page_context: currentPath,
+      history
+    })
+  });
+  
+  if (!res.ok) {
+    throw new Error('Failed to communicate with help desk');
+  }
+  return res.json();
 }
 
 export async function refreshProjects(userId: string) {

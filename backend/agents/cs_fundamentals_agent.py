@@ -66,7 +66,7 @@ def evaluate_answer(question: str, answer: str) -> dict:
     """
     Evaluates a user's answer to a CS theory question.
     """
-    llm = get_llm(temperature=0.2, model="llama-3.3-70b-versatile")
+    llm = get_llm(temperature=0.2, model="openai/gpt-oss-120b")
     prompt = f"""You are a strict CS professor grading an oral exam.
 Question: "{question}"
 Student's Answer: "{answer}"

@@ -1,15 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api.routes import resume
+from api.routes import resume, dsa, cs_fundamentals, system_design, settings, career_plan
 from api.routes.copilot import router as copilot_router
-from api.routes import dsa
 from api.routes.projects import router as projects_router
 from api.routes.interview import router as interview_router
-from api.routes import cs_fundamentals
-from api.routes import system_design
-from api.routes import settings
 from api.routes.resources import router as resources_router
-from api.routes import career_plan
+from api.routes.helpdesk import router as helpdesk_router
 
 app = FastAPI(title="Placement Copilot API")
 
@@ -31,6 +27,7 @@ app.include_router(system_design.router, prefix="/api/system_design", tags=["sys
 app.include_router(settings.router, prefix="/api/settings", tags=["settings"])
 app.include_router(resources_router, prefix="/api/resources", tags=["resources"])
 app.include_router(career_plan.router, prefix="/api/career-plan", tags=["career-plan"])
+app.include_router(helpdesk_router, prefix="/api/helpdesk", tags=["helpdesk"])
 
 @app.get("/health")
 def health_check():

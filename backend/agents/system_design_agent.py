@@ -40,7 +40,7 @@ def evaluate_system_design(challenge: dict, user_solution: str) -> dict:
     """
     Evaluates a user's system design solution.
     """
-    llm = get_llm(temperature=0.2, model="llama-3.3-70b-versatile")
+    llm = get_llm(temperature=0.2, model="openai/gpt-oss-120b")
     
     prompt = f"""You are a strict staff engineer evaluating a system design interview.
 Challenge Title: {challenge.get('title')}

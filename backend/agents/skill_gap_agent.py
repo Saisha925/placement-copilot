@@ -105,7 +105,7 @@ Return ONLY a JSON object with this exact structure, no markdown, no explanation
         print(f"[skill_gap_agent] first attempt failed: {first_err}")
         print("[skill_gap_agent] retrying without json_mode...")
         try:
-            llm_retry = get_llm(temperature=0.4, model="llama-3.3-70b-versatile", max_tokens=4096, json_mode=False)
+            llm_retry = get_llm(temperature=0.4, model="openai/gpt-oss-120b", max_tokens=4096, json_mode=False)
             response = llm_retry.invoke([HumanMessage(content=prompt)])
             text = response.content.strip()
             if "```json" in text:

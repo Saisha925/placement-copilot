@@ -1,4 +1,5 @@
 import { Navbar } from '@/components/shared/Navbar'
+import HelpDeskWidget from '@/components/HelpDeskWidget'
 
 export default function MainLayout({
   children,
@@ -11,6 +12,7 @@ export default function MainLayout({
       <main className="flex-1 container max-w-[1600px] mx-auto p-6 overflow-x-hidden pt-8">
         {children}
       </main>
+      <HelpDeskWidget />
     </div>
   )
 }

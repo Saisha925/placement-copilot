@@ -41,9 +41,10 @@ def calculate_readiness(state: dict) -> int:
 
     project_score = 0
     if projects := state.get("project_recommendations"):
-        total = len(projects)
-        done = sum(1 for p in projects if p.get("status") == "completed")
-        project_score = (done / total * 100) if total > 0 else 0
+        weights = {"beginner": 1, "intermediate": 2, "advanced": 3}
+        total_weight = sum(weights.get(str(p.get("difficulty", "beginner")).lower(), 1) for p in projects)
+        done_weight = sum(weights.get(str(p.get("difficulty", "beginner")).lower(), 1) for p in projects if p.get("status") == "completed")
+        project_score = (done_weight / total_weight * 100) if total_weight > 0 else 0
 
     sd_score = 0
     if sd := state.get("system_design_scores"):
@@ -51,20 +52,34 @@ def calculate_readiness(state: dict) -> int:
 
     plan_score = 0
     if cp := state.get("career_plan"):
-        total_topics = 0
+        completed_set = set(state.get("completed_plan_topics") or [])
+        total_weight = 0
+        completed_weight = 0
+        
+        priority_weights = {"high": 3, "medium": 2, "low": 1}
+        
+        def process_task(task_obj, topic_id_prefix=""):
+            nonlocal total_weight, completed_weight
+            if not task_obj: return
+            priority = str(task_obj.get("priority", "medium")).lower()
+            weight = priority_weights.get(priority, 2)
+            topics = task_obj.get("topics") or []
+            for t in topics:
+                total_weight += weight
+                prefixed_t = f"{topic_id_prefix}_{t}" if topic_id_prefix else t
+                if t in completed_set or prefixed_t in completed_set:
+                    completed_weight += weight
+
         def count_topics_in_weeks(weeks):
-            nonlocal total_topics
             if not weeks: return
             for w in weeks:
                 for d in w.get("days") or []:
-                    morning = d.get("morning") or {}
-                    total_topics += len(morning.get("topics") or [])
-                    
-                    evening = d.get("evening") or {}
-                    total_topics += len(evening.get("topics") or [])
+                    date_str = d.get("date")
+                    process_task(d.get("morning"), f"{date_str}_Morning" if date_str else "")
+                    process_task(d.get("evening"), f"{date_str}_Evening" if date_str else "")
                     
                 for t in w.get("weekly_tasks") or []:
-                    total_topics += len(t.get("topics") or [])
+                    process_task(t)
         
         plan_format = cp.get("format")
         if plan_format == "days":
@@ -80,9 +95,8 @@ def calculate_readiness(state: dict) -> int:
             for phase in cp.get("phases") or []:
                 count_topics_in_weeks(phase.get("weeks") or [])
             
-        completed = len(state.get("completed_plan_topics") or [])
-        if total_topics > 0:
-            plan_score = min(100, (completed / total_topics) * 100)
+        if total_weight > 0:
+            plan_score = min(100, (completed_weight / total_weight) * 100)
 
     raw = (
         resume_score    * 0.10 +

@@ -102,7 +102,7 @@ def generate_career_plan(state: dict) -> dict:
     Reads ALL agent outputs from shared state — fully context-aware.
     Uses standard model for plan generation to prevent timeout truncation
     """
-    llm = get_llm(temperature=0.4, model="llama-3.3-70b-versatile", max_tokens=4096, json_mode=True)
+    llm = get_llm(temperature=0.4, model="openai/gpt-oss-120b", max_tokens=4096, json_mode=True)
 
     # Pull everything from shared state
     target_role = state.get("target_role", "Software Engineer")
@@ -300,7 +300,7 @@ Return ONLY valid JSON matching this schema:
 
         # Retry without strict json_mode — allows partial recovery
         try:
-            llm_retry = get_llm(temperature=0.4, model="llama-3.3-70b-versatile", max_tokens=4096, json_mode=False)
+            llm_retry = get_llm(temperature=0.4, model="openai/gpt-oss-120b", max_tokens=4096, json_mode=False)
             response = llm_retry.invoke([HumanMessage(content=prompt)])
             text = response.content.strip()
             # Extract JSON from possible markdown wrapping

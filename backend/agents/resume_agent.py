@@ -21,7 +21,7 @@ def analyze_resume(resume_text: str, target_role: str) -> dict:
     Analyze resume text for a given target role.
     Returns structured JSON with ATS score, issues, suggestions, missing skills.
     """
-    llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.3)
+    llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0.3)
     system_prompt = """You are an expert ATS and resume reviewer.
 Analyze the resume for the given target role.
 
